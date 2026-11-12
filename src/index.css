@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --color-forest: #254B36;
+    --color-mustard: #D6A83F;
+    --color-offwhite: #F5F2E9;
+    --color-earth: #806B50;
+    --color-mutedgreen: #71866A;
+    --color-ink: #1C1917;
+  }
+
+  html {
+    font-family: 'Vazirmatn', system-ui, -apple-system, sans-serif;
+    background-color: #F5F2E9;
+    color: #1C1917;
+  }
+
+  .font-display-en {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+  }
+
+  .font-mono-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Custom subtle scrollbars for editorial panels */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #EBE6DF;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #806B50;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #254B36;
+}

@@ -1,0 +1,6 @@
+{
+  "name": "Barzok People Map | مردمنگار برزک",
+  "description": "نقشه زنده حافظه، فرهنگ و زندگی مردم برزک — A digital ethnographic and cultural heritage mapping platform for Barzok, Kashan, Iran.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
