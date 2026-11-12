@@ -20,6 +20,7 @@ import {
   Users,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { DATA_SOURCE, apiRequest, resetLocalData } from '../data/api';
 import {
   AdminBundle,
   BARZOK_CENTER,
@@ -58,7 +59,6 @@ export function AdminDashboard({
   const {
     user,
     getFreshToken,
-    signInWithGoogle,
     enterPreviewAdmin,
     logout,
     authError,
@@ -150,11 +150,7 @@ export function AdminDashboard({
     try {
       const token = await getFreshToken();
       if (!token) return;
-      const res = await fetch('/api/admin/bundle', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error('خطا در دریافت اطلاعات پنل مدیریت');
-      const data: AdminBundle = await res.json();
+      const data = await apiRequest<AdminBundle>('GET', '/api/admin/bundle', undefined, { token });
       setAdminData(data);
       if (data.layers.length > 0 && !placeLayerId) {
         setPlaceLayerId(data.layers[0].id);
@@ -175,19 +171,31 @@ export function AdminDashboard({
   const authFetch = async (url: string, options: RequestInit = {}) => {
     const token = await getFreshToken();
     if (!token) throw new Error('لطفاً ابتدا با حساب مدیر وارد شوید.');
-    const res = await fetch(url, {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-        ...(options.headers || {}),
-      },
+    // Same call shape as before (url + fetch-style options), now routed through the data layer
+    // so it works against the local JSON/localStorage backend or a remote one.
+    const method = ((options.method as string) || 'GET').toUpperCase() as
+      | 'GET'
+      | 'POST'
+      | 'PUT'
+      | 'DELETE';
+    const body = options.body ? JSON.parse(options.body as string) : undefined;
+    return apiRequest(method, url, body, { token });
+  };
+
+  const handleResetDemoData = async () => {
+    const ok = window.confirm(
+      lang === 'fa'
+        ? 'همه‌ی تغییرات این مرورگر پاک شده و داده‌های نمایشی اولیه بازگردانده می‌شوند. ادامه می‌دهید؟'
+        : 'This clears all edits stored in this browser and restores the original demo data. Continue?'
+    );
+    if (!ok) return;
+    resetLocalData();
+    await fetchAdminData();
+    await onRefreshPublic();
+    setStatusMessage({
+      type: 'success',
+      text: lang === 'fa' ? 'داده‌های نمایشی بازنشانی شد.' : 'Demo data has been reset.',
     });
-    const data = await res.json();
-    if (!res.ok) {
-      throw new Error(data.error || 'عملیات با خطا مواجه شد.');
-    }
-    return data;
   };
 
   // Layer Handlers
@@ -433,7 +441,7 @@ export function AdminDashboard({
 
   const activeLayers = adminData?.layers || publicBundle.layers;
   const activePlaces = adminData?.places || publicBundle.places;
-  const embedUrl = `${window.location.origin}/embed`;
+  const embedUrl = `${window.location.origin}${import.meta.env.BASE_URL}?embed=1`;
   const iframeSnippet = `<iframe src="${embedUrl}" width="100%" height="680" style="border:0; border-radius: 12px; overflow: hidden;" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="مردمنگار برزک | Barzok People Map"></iframe>`;
 
   return (
@@ -454,6 +462,20 @@ export function AdminDashboard({
             <span className="text-xs text-[#F5F2E9]/85 hidden md:inline">
               {user.email}
             </span>
+          )}
+          {user && DATA_SOURCE === 'local' && (
+            <button
+              type="button"
+              onClick={handleResetDemoData}
+              className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs transition-colors whitespace-nowrap"
+              title={
+                lang === 'fa'
+                  ? 'پاک کردن تغییرات این مرورگر و بازگشت به داده‌های اولیه'
+                  : 'Clear this browser\'s edits and restore the seed data'
+              }
+            >
+              {lang === 'fa' ? 'بازنشانی داده‌های نمایشی' : 'Reset demo data'}
+            </button>
           )}
           {user && (
             <button
@@ -489,7 +511,7 @@ export function AdminDashboard({
               <p className="text-xs text-[#57534E] leading-relaxed">
                 {lang === 'fa'
                   ? 'برای مدیریت پویا لایه‌های موضوعی، افزودن مکان‌ها روی نقشه، مدیریت داستان‌ها و بررسی مشارکت‌های مردمی، با حساب مدیریتی خود وارد شوید.'
-                  : 'Sign in with your administrator Google account to manage dynamic map layers, locations, oral histories, and community submissions.'}
+                  : 'Enter the demo admin dashboard to manage dynamic map layers, locations, oral histories, and community submissions. Edits are stored only in this browser.'}
               </p>
             </div>
 
@@ -502,28 +524,21 @@ export function AdminDashboard({
             <div className="space-y-2.5">
               <button
                 type="button"
-                onClick={signInWithGoogle}
+                onClick={enterPreviewAdmin}
                 className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-lg bg-[#254B36] text-[#F5F2E9] text-sm font-medium hover:bg-[#1d3b2a] transition-colors"
               >
                 <LogIn className="w-4 h-4" />
                 <span>
                   {lang === 'fa'
-                    ? 'ورود با حساب گوگل (Google Sign-In)'
-                    : 'Sign in with Google'}
+                    ? 'ورود به پنل مدیریت (حالت نمایشی محلی)'
+                    : 'Enter Admin Dashboard (Local Demo Mode)'}
                 </span>
               </button>
-
-              <button
-                type="button"
-                onClick={enterPreviewAdmin}
-                className="w-full flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-[#EBE6DF] hover:bg-[#D6CEBE] text-[#1C1917] text-xs font-semibold transition-colors"
-              >
-                <span>
-                  {lang === 'fa'
-                    ? 'ورود مستقیم در حالت پیش‌نمایش (بدون نیاز به پاپ‌آپ گوگل)'
-                    : 'Enter Admin Dashboard (Preview Mode — No Popup Required)'}
-                </span>
-              </button>
+              <p className="text-[11px] text-[#806B50] leading-relaxed">
+                {lang === 'fa'
+                  ? 'احراز هویت واقعی در این نسخه وجود ندارد؛ برای انتشار عمومی باید ورود امن جایگزین شود.'
+                  : 'There is no real authentication in this version; add secure sign-in before a public launch.'}
+              </p>
             </div>
 
             <div className="pt-4 border-t border-[#806B50]/20 text-start space-y-2">
@@ -557,7 +572,7 @@ export function AdminDashboard({
                 labelEn: 'Moderation Queue',
                 icon: AlertCircle,
               },
-              { id: 'embed', labelFa: 'جاسازی در وردپرس (/embed)', labelEn: 'WP Embed', icon: Code2 },
+              { id: 'embed', labelFa: 'جاسازی در وردپرس (iframe)', labelEn: 'WP Embed', icon: Code2 },
             ].map((tab) => {
               const Icon = tab.icon;
               const active = activeTab === tab.id;
@@ -2517,8 +2532,8 @@ export function AdminDashboard({
               </h2>
               <p className="text-sm text-[#57534E] leading-relaxed">
                 {lang === 'fa'
-                  ? 'مسیر اختصاصی /embed بدون هدر و فوتر طراحی شده و تمام عرض و ارتفاع قاب (iframe) را به صورت کاملاً واکنش‌گرا در اختیار نقشه، پنل لایه‌ها و جزئیات مکان قرار می‌دهد. برای قرار دادن نقشه در وردپرس یا المنتور، بلوک HTML را اضافه کرده و کد زیر را جایگذاری نمایید:'
-                  : 'The dedicated /embed route hides the website header and footer, filling 100% of the iframe container while preserving layer toggles, search, and location details.'}
+                  ? 'حالت جاسازی (?embed=1) بدون هدر و فوتر طراحی شده و تمام عرض و ارتفاع قاب (iframe) را به صورت کاملاً واکنش‌گرا در اختیار نقشه، پنل لایه‌ها و جزئیات مکان قرار می‌دهد. برای قرار دادن نقشه در وردپرس یا المنتور، بلوک HTML را اضافه کرده و کد زیر را جایگذاری نمایید:'
+                  : 'The embed mode (?embed=1) hides the website header and footer, filling 100% of the iframe container while preserving layer toggles, search, and location details.'}
               </p>
 
               <div className="space-y-2">

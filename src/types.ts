@@ -216,9 +216,12 @@ export interface AdminBundle extends PublicMapBundle {
   contributions: ContributionRecord[];
 }
 
-// Official Geographic Center of Barzok, Kashan County, Isfahan Province, Iran
+// Geographic center of Barzok, Kashan County, Isfahan Province, Iran.
+// Verified against two independent sources: Wikipedia (33°47′09″N 51°13′38″E =
+// 33.78583, 51.22722) and a gazetteer listing (≈33.783, 51.225). The earlier value
+// (33.7925, 51.2292) was ~0.7 km north-east of the town.
 export const BARZOK_CENTER = {
-  lat: 33.7925,
-  lng: 51.2292,
+  lat: 33.78583,
+  lng: 51.22722,
   defaultZoom: 15,
 };

@@ -159,7 +159,7 @@ export function LocationDetailPanel({
   }, [allPlaces, place]);
 
   const shareUrl = `${window.location.origin}/place/${place.slug}`;
-  const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${place.latitude},${place.longitude}`;
+  const osmUrl = `https://www.openstreetmap.org/?mlat=${place.latitude}&mlon=${place.longitude}#map=18/${place.latitude}/${place.longitude}`;
 
   const handleCopyLink = async () => {
     try {
@@ -300,13 +300,13 @@ export function LocationDetailPanel({
         {/* Primary Action Toolbar */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
           <a
-            href={googleMapsUrl}
+            href={osmUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-[#254B36] text-[#F5F2E9] text-xs font-medium hover:bg-[#1d3b2a] transition-colors whitespace-nowrap"
           >
             <ExternalLink className="w-3.5 h-3.5 shrink-0" />
-            <span>{lang === 'fa' ? 'گوگل مپس' : 'Google Maps'}</span>
+            <span>{lang === 'fa' ? 'مشاهده در OSM' : 'Open in OSM'}</span>
           </a>
 
           <button

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { CheckCircle2, MapPin, Send, ShieldCheck, X } from 'lucide-react';
 import { BARZOK_CENTER, Language } from '../types';
+import { apiRequest } from '../data/api';
 
 interface ContributionModalProps {
   lang: Language;
@@ -79,26 +80,17 @@ export function ContributionModal({
     setSubmitting(true);
 
     try {
-      const res = await fetch('/api/public/contributions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          submissionType,
-          title,
-          description,
-          latitude: latitude ? Number(latitude) : null,
-          longitude: longitude ? Number(longitude) : null,
-          mediaUrl: mediaUrl || null,
-          contributorName,
-          contactInfo,
-          consentToPublish,
-        }),
+      await apiRequest('POST', '/api/public/contributions', {
+        submissionType,
+        title,
+        description,
+        latitude: latitude ? Number(latitude) : null,
+        longitude: longitude ? Number(longitude) : null,
+        mediaUrl: mediaUrl || null,
+        contributorName,
+        contactInfo,
+        consentToPublish,
       });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'خطا در ثبت مشارکت');
-      }
 
       setSubmittedSuccess(true);
     } catch (err: any) {

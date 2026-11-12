@@ -20,6 +20,7 @@ import {
   X,
 } from 'lucide-react';
 import { AuthProvider } from './context/AuthContext';
+import { apiRequest } from './data/api';
 import {
   Language,
   PlaceRecord,
@@ -45,7 +46,10 @@ function safeParseJson<T>(raw: string | undefined | null, fallback: T): T {
 }
 
 function BarzokAppContent() {
-  const [lang, setLang] = useState<Language>('fa');
+  // `?lang=en` lets an embedding page (WordPress/Elementor) pick the language.
+  const [lang, setLang] = useState<Language>(() =>
+    new URLSearchParams(window.location.search).get('lang') === 'en' ? 'en' : 'fa'
+  );
   const [pathname, setPathname] = useState<string>(window.location.pathname);
 
   const isEmbedMode = useMemo(() => {
@@ -121,11 +125,7 @@ function BarzokAppContent() {
     setLoading(true);
     setLoadError(null);
     try {
-      const res = await fetch('/api/public/map-bundle');
-      if (!res.ok) {
-        throw new Error('خطا در بارگذاری اطلاعات نقشه از پایگاه داده');
-      }
-      const data: PublicMapBundle = await res.json();
+      const data = await apiRequest<PublicMapBundle>('GET', '/api/public/map-bundle');
       setBundle(data);
 
       // Initialize layer visibility from DB layers
@@ -363,7 +363,8 @@ function BarzokAppContent() {
     );
   }
 
-  const embedUrl = `${window.location.origin}/embed`;
+  // `?embed=1` works on any static host (no server rewrite needed, unlike `/embed`).
+  const embedUrl = `${window.location.origin}${import.meta.env.BASE_URL}?embed=1`;
   const iframeSnippet = `<iframe src="${embedUrl}" width="100%" height="680" style="border:0; border-radius: 12px; overflow: hidden;" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="مردمنگار برزک | Barzok People Map"></iframe>`;
 
   return (
@@ -1118,7 +1119,7 @@ function BarzokAppContent() {
                 </span>
               </h2>
               <a
-                href="/embed"
+                href="?embed=1"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-xs font-semibold text-[#254B36] underline"
@@ -1129,8 +1130,8 @@ function BarzokAppContent() {
 
             <p className="text-xs text-[#57534E] leading-relaxed">
               {lang === 'fa'
-                ? 'برای قرار دادن نقشه تعاملی برزک در هر برگه وردپرس یا صفحه‌ساز المنتور (Elementor)، یک ویجت HTML اضافه کرده و کد زیر را در آن قرار دهید. هدرهای امنیتی Content-Security-Policy (frame-ancestors *) به گونه‌ای تنظیم شده‌اند که جاسازی در دامنه‌های خارجی وردپرس بدون محدودیت و بدون اسکرول‌بار اضافی کار کند.'
-                : 'Add an HTML widget in WordPress / Elementor and paste the snippet below. The /embed mode hides the site header/footer and fills 100% of the iframe container.'}
+                ? 'برای قرار دادن نقشه تعاملی برزک در هر برگه وردپرس یا صفحه‌ساز المنتور (Elementor)، یک ویجت HTML اضافه کرده و کد زیر را در آن قرار دهید. برای نسخه‌ی انگلیسی به انتهای آدرس «&lang=en» اضافه کنید. پس از انتشار روی میزبان نهایی، اطمینان حاصل کنید که میزبان سرآیند frame-ancestors را مسدود نمی‌کند (راهنما در README).'
+                : 'Add an HTML widget in WordPress / Elementor and paste the snippet below. Append "&lang=en" to the URL for the English UI. The embed mode hides the site header/footer and fills 100% of the iframe. After deploying, make sure your host does not block framing (see README).'}
             </p>
 
             <div className="relative">
@@ -1159,22 +1160,18 @@ function BarzokAppContent() {
           <section className="bg-white p-6 rounded-xl border border-[#806B50]/25 space-y-4">
             <h2 className="text-base font-bold text-[#1C1917]">
               {lang === 'fa'
-                ? 'معماری امنیتی، پایگاه داده و تنظیمات کلیدهای API در محیط عملیاتی'
-                : 'Production API Keys, RLS Security & Architecture Readiness'}
+                ? 'حالت نمونه‌ی اولیه: بدون کلید API، بدون هزینه و بدون سرور'
+                : 'Prototype Mode: No API Keys, No Billing, No Server'}
             </h2>
             <ul className="space-y-2 text-xs text-[#57534E] leading-relaxed list-disc ps-5">
               <li>
-                <strong>پایگاه داده رابطه‌ای (PostgreSQL):</strong> جداول ۱۲گانه شامل{' '}
-                <code className="font-mono-num">
-                  layers, places, people, stories, media, events, activities, routes, route_stops, contributions, place_people, place_stories
-                </code>{' '}
-                با کلیدهای UUID و ایندکس‌های مختصات جغرافیایی و وضعیت انتشار پیاده‌سازی شده‌اند.
+                <strong>نقشه:</strong> Leaflet با تایل‌های OpenStreetMap (و لایه‌ی توپوگرافی OpenTopoMap). نیازی به کلید یا حساب پرداخت نیست؛ درج منبع نقشه در گوشه‌ی نقشه الزامی است و باید حفظ شود.
               </li>
               <li>
-                <strong>سطوح دسترسی (Row-Level Security & API Isolation):</strong> بازدیدکنندگان عمومی فقط به محتوای منتشرشده (<code className="font-mono-num">published</code>) دسترسی دارند؛ مشارکت‌های مردمی بدون انتشار خودکار وارد صف بررسی (<code className="font-mono-num">pending_review</code>) می‌شوند و اطلاعات تماس مشارکت‌کنندگان هرگز در API عمومی بازگردانده نمی‌شود.
+                <strong>داده‌ها:</strong> فایل‌های JSON محلی در <code className="font-mono-num">src/data/seed</code> به‌عنوان داده‌ی اولیه، و ذخیره‌ی تغییرات در <code className="font-mono-num">localStorage</code> مرورگر. ویرایش‌ها فقط در همین مرورگر دیده می‌شوند و بین بازدیدکنندگان به اشتراک گذاشته نمی‌شوند.
               </li>
               <li>
-                <strong>محدودسازی کلید Google Maps در محیط عملیاتی:</strong> در کنسول Google Cloud، کلید <code className="font-mono-num">VITE_GOOGLE_MAPS_API_KEY</code> را به HTTP Referrers دامنه اصلی سایت و دامنه وردپرس محدود کرده و API Restriction را صرفاً روی Maps JavaScript API تنظیم نمایید.
+                <strong>ورود مدیر:</strong> ورود نمایشی بدون احراز هویت واقعی است. پیش از انتشار عمومی با داده‌ی واقعی، باید پایگاه داده و احراز هویت (مثلاً Supabase) جایگزین شود؛ لایه‌ی داده (<code className="font-mono-num">src/data/api.ts</code>) و نقشه (<code className="font-mono-num">BarzokMapCanvas</code>) برای همین جایگزینی ماژولار نوشته شده‌اند.
               </li>
             </ul>
           </section>
@@ -1238,8 +1235,8 @@ function BarzokAppContent() {
             : 'Barzok People Map — Digital Ethnographic & Cultural Heritage Platform'}
         </span>
         <div className="flex items-center gap-4">
-          <a href="/embed" target="_blank" rel="noopener noreferrer" className="hover:text-[#254B36]">
-            {lang === 'fa' ? 'نمای جاسازی (/embed)' : 'Embed View (/embed)'}
+          <a href="?embed=1" target="_blank" rel="noopener noreferrer" className="hover:text-[#254B36]">
+            {lang === 'fa' ? 'نمای جاسازی (embed)' : 'Embed View (embed)'}
           </a>
           <span>·</span>
           <button

@@ -1,0 +1,42 @@
+[
+  {
+    "id": "stop-1",
+    "routeId": "route-barzok-garden-to-historic-core-demo",
+    "placeId": "place-barzok-walnut-orchards-path-demo",
+    "stopOrder": 1,
+    "noteFa": "ایستگاه اول (نمونه): آغاز مسیر از جویبار و کوچه‌باغ‌های گردو",
+    "noteEn": "Stop 1 (Demo): Starting at the terraced walnut orchards stream",
+    "createdAt": "2026-11-12T08:21:00.000Z",
+    "updatedAt": "2026-11-12T08:21:00.000Z"
+  },
+  {
+    "id": "stop-2",
+    "routeId": "route-barzok-garden-to-historic-core-demo",
+    "placeId": "place-barzok-rosewater-workshop-demo",
+    "stopOrder": 2,
+    "noteFa": "ایستگاه دوم (نمونه): بازدید از کارگاه سنتی گلاب‌گیری",
+    "noteEn": "Stop 2 (Demo): Visiting the traditional rosewater workshop",
+    "createdAt": "2026-11-12T08:22:00.000Z",
+    "updatedAt": "2026-11-12T08:22:00.000Z"
+  },
+  {
+    "id": "stop-3",
+    "routeId": "route-barzok-garden-to-historic-core-demo",
+    "placeId": "place-barzok-weaving-craft-demo",
+    "stopOrder": 3,
+    "noteFa": "ایستگاه سوم (نمونه): کارگاه نساجی و صنایع دستی",
+    "noteEn": "Stop 3 (Demo): Traditional handloom weaving workshop",
+    "createdAt": "2026-11-12T08:23:00.000Z",
+    "updatedAt": "2026-11-12T08:23:00.000Z"
+  },
+  {
+    "id": "stop-4",
+    "routeId": "route-barzok-garden-to-historic-core-demo",
+    "placeId": "place-barzok-historic-center-demo",
+    "stopOrder": 4,
+    "noteFa": "ایستگاه چهارم (نمونه): بافت پلکانی و چشم‌انداز هسته تاریخی برزک",
+    "noteEn": "Stop 4 (Demo): Historic stepped hillside architecture overlook",
+    "createdAt": "2026-11-12T08:24:00.000Z",
+    "updatedAt": "2026-11-12T08:24:00.000Z"
+  }
+]

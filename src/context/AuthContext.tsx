@@ -1,120 +1,82 @@
+// Demo-only admin session for the local prototype.
+//
+// There is NO real authentication here: the admin panel is reachable from the browser and
+// edits only touch this browser's localStorage. When a real backend is added (Supabase,
+// Firebase, your own server), replace this provider and keep the same context shape —
+// the original Firebase implementation is archived in docs/future-google-maps/.
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
-import { auth, googleAuthProvider } from '../lib/firebase';
+
+export interface AdminUser {
+  uid: string;
+  email: string;
+  displayName: string;
+}
 
 interface AuthContextValue {
-  user: User | { uid: string; email: string; displayName: string } | null;
+  user: AdminUser | null;
   idToken: string | null;
   loading: boolean;
   authError: string | null;
-  signInWithGoogle: () => Promise<void>;
   enterPreviewAdmin: () => void;
   logout: () => Promise<void>;
   getFreshToken: () => Promise<string | null>;
 }
 
-const PREVIEW_ADMIN_TOKEN = 'barzok-preview-admin-session-token';
+const DEMO_ADMIN_TOKEN = 'barzok-local-demo-admin-token';
+const SESSION_KEY = 'barzok-demo-admin-session';
+
+const DEMO_USER: AdminUser = {
+  uid: 'barzok-demo-admin',
+  email: 'demo-admin@local',
+  displayName: 'مدیر نمایشی (حالت محلی)',
+};
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<
-    User | { uid: string; email: string; displayName: string } | null
-  >(null);
-  // Token kept strictly in memory as required by cloudsql-setup Step 4.3
+  const [user, setUser] = useState<AdminUser | null>(null);
   const [idToken, setIdToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [authError, setAuthError] = useState<string | null>(null);
+  const [authError] = useState<string | null>(null);
 
+  // Restore the demo session for the current tab, if any.
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        setUser(firebaseUser);
-        try {
-          const token = await firebaseUser.getIdToken();
-          setIdToken(token);
-        } catch {
-          setIdToken(null);
-        }
+    try {
+      if (window.sessionStorage.getItem(SESSION_KEY) === '1') {
+        setUser(DEMO_USER);
+        setIdToken(DEMO_ADMIN_TOKEN);
       }
-      setLoading(false);
-    });
-    return () => unsubscribe();
+    } catch {
+      // sessionStorage blocked (sandboxed iframe) → start signed out
+    }
+    setLoading(false);
   }, []);
 
   const enterPreviewAdmin = () => {
-    setAuthError(null);
-    setUser({
-      uid: 'barzok-preview-admin',
-      email: 'admin@barzok.ir',
-      displayName: 'مدیر مردمنگار برزک (Preview)',
-    });
-    setIdToken(PREVIEW_ADMIN_TOKEN);
-  };
-
-  const signInWithGoogle = async () => {
-    setAuthError(null);
+    setUser(DEMO_USER);
+    setIdToken(DEMO_ADMIN_TOKEN);
     try {
-      const credential = await signInWithPopup(auth, googleAuthProvider);
-      const token = await credential.user.getIdToken();
-      setUser(credential.user);
-      setIdToken(token);
-    } catch (err: any) {
-      const code = err?.code || '';
-      if (
-        code === 'auth/popup-closed-by-user' ||
-        code === 'auth/cancelled-popup-request'
-      ) {
-        setAuthError(
-          'پنجره ورود گوگل بسته شد. می‌توانید دوباره تلاش کنید یا از دکمه «ورود مستقیم در حالت پیش‌نمایش» استفاده نمایید.'
-        );
-      } else {
-        setAuthError(
-          'امکان تکمیل ورود پاپ‌آپ گوگل در این مرورگر/شبکه فراهم نشد. از دکمه «ورود مستقیم در حالت پیش‌نمایش» برای دسترسی کامل به پنل مدیریت استفاده کنید.'
-        );
-      }
-      // Do not rethrow or call console.error so popup cancellation never triggers uncaught errors
+      window.sessionStorage.setItem(SESSION_KEY, '1');
+    } catch {
+      // ignore
     }
   };
 
   const logout = async () => {
-    try {
-      if (auth.currentUser) {
-        await signOut(auth);
-      }
-    } catch {
-      // Ignore signout errors
-    }
     setUser(null);
     setIdToken(null);
+    try {
+      window.sessionStorage.removeItem(SESSION_KEY);
+    } catch {
+      // ignore
+    }
   };
 
-  const getFreshToken = async () => {
-    if (idToken === PREVIEW_ADMIN_TOKEN) {
-      return PREVIEW_ADMIN_TOKEN;
-    }
-    if (!auth.currentUser) return idToken;
-    try {
-      const token = await auth.currentUser.getIdToken();
-      setIdToken(token);
-      return token;
-    } catch {
-      return idToken;
-    }
-  };
+  const getFreshToken = async () => idToken;
 
   return (
     <AuthContext.Provider
-      value={{
-        user,
-        idToken,
-        loading,
-        authError,
-        signInWithGoogle,
-        enterPreviewAdmin,
-        logout,
-        getFreshToken,
-      }}
+      value={{ user, idToken, loading, authError, enterPreviewAdmin, logout, getFreshToken }}
     >
       {children}
     </AuthContext.Provider>
