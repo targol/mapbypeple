@@ -1,19 +1,30 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './leaflet-overrides.css';
-import { MapContainer, Marker, Polyline, TileLayer, useMap, useMapEvents } from 'react-leaflet';
+import {
+  Circle,
+  MapContainer,
+  Marker,
+  Polygon,
+  Polyline,
+  TileLayer,
+  useMap,
+  useMapEvents,
+} from 'react-leaflet';
 import {
   Compass,
   Layers as LayersIcon,
   LocateFixed,
   Minus,
+  Navigation,
   Plus,
   Route as RouteIcon,
 } from 'lucide-react';
 import { BARZOK_CENTER, LayerRecord, PlaceRecord } from '../../types';
 import { LayerIcon } from '../LayerIcon';
+import { distanceMeters } from '../../utils/geo';
 import type { BarzokMapCanvasProps } from './mapTypes';
 
 type TileStyle = 'osm' | 'topo';
@@ -42,6 +53,10 @@ const TILE_SOURCES: Record<
 
 const MIN_ZOOM = 6;
 const MAX_ZOOM = 19;
+const LABEL_MIN_ZOOM = 17; // place names next to pins appear from this zoom level
+
+// With ~200 places the pins must shrink when zoomed out, or they pile up on top of each other.
+const pinSize = (zoom: number) => (zoom >= 18 ? 40 : zoom >= 17 ? 34 : zoom >= 16 ? 26 : 20);
 
 interface PositionedPlace {
   place: PlaceRecord;
@@ -63,20 +78,21 @@ function buildPlaceIcon(opts: {
   iconName: string;
   selected: boolean;
   count: number;
-  label: string;
+  label: string | null;
+  size: number;
 }) {
   const svg = renderToStaticMarkup(<LayerIcon name={opts.iconName} className="" />);
   const html = `
-    <div class="barzok-pin${opts.selected ? ' is-selected' : ''}">
+    <div class="barzok-pin${opts.selected ? ' is-selected' : ''}" style="--s:${opts.size}px">
       <div class="barzok-pin__dot" style="background-color:${escapeHtml(opts.color)}">${svg}</div>
-      ${opts.count > 1 ? `<span class="barzok-pin__count">${opts.count}</span>` : ''}
-      <div class="barzok-pin__label" dir="auto">${escapeHtml(opts.label)}</div>
+      ${opts.count > 1 && opts.size >= 26 ? `<span class="barzok-pin__count">${opts.count}</span>` : ''}
+      ${opts.label ? `<div class="barzok-pin__label" dir="auto">${escapeHtml(opts.label)}</div>` : ''}
     </div>`;
   return L.divIcon({
     html,
     className: 'barzok-divicon',
-    iconSize: [40, 40],
-    iconAnchor: [20, 20],
+    iconSize: [opts.size, opts.size],
+    iconAnchor: [opts.size / 2, opts.size / 2],
   });
 }
 
@@ -93,14 +109,22 @@ function buildPickIcon(coords: { lat: number; lng: number }) {
   });
 }
 
+// The numbered badge is anchored so it sits at the top-left corner of the pin it belongs to.
 function buildStopIcon(order: number) {
   return L.divIcon({
     html: `<div class="barzok-stop">${order}</div>`,
     className: 'barzok-divicon',
     iconSize: [22, 22],
-    iconAnchor: [11, 11],
+    iconAnchor: [26, 26],
   });
 }
+
+const ME_ICON = L.divIcon({
+  html: '<div class="barzok-me"><div class="barzok-me__pulse"></div><div class="barzok-me__dot"></div></div>',
+  className: 'barzok-divicon',
+  iconSize: [20, 20],
+  iconAnchor: [10, 10],
+});
 
 // Leaflet needs to be told when its container changes size (sidebar toggles, mobile sheet).
 function SizeSync() {
@@ -118,10 +142,12 @@ function MapEvents({
   pickMode,
   onPickCoords,
   onCenterChange,
+  onZoomChange,
 }: {
   pickMode: boolean;
   onPickCoords?: (coords: { lat: number; lng: number }) => void;
   onCenterChange: (center: { lat: number; lng: number }) => void;
+  onZoomChange: (zoom: number) => void;
 }) {
   const map = useMapEvents({
     click(e) {
@@ -132,6 +158,9 @@ function MapEvents({
     moveend() {
       const c = map.getCenter();
       onCenterChange({ lat: c.lat, lng: c.lng });
+    },
+    zoomend() {
+      onZoomChange(map.getZoom());
     },
   });
   return null;
@@ -148,19 +177,72 @@ function PanToSelected({ target }: { target: { id: string; lat: number; lng: num
   return null;
 }
 
+// Fit the map to the active route when it is chosen.
+function FitRoute({ routeId, points }: { routeId: string | null; points: [number, number][] }) {
+  const map = useMap();
+  useEffect(() => {
+    if (!routeId || points.length < 2) return;
+    map.fitBounds(L.latLngBounds(points), { padding: [40, 40], maxZoom: 17, animate: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [routeId, map]);
+  return null;
+}
+
+// Blue dot + accuracy circle for the visitor; flies to them on the first GPS fix if they are
+// near the village (someone browsing from far away keeps the village view).
+function UserLayer({ position }: { position: { lat: number; lng: number; accuracy: number } | null }) {
+  const map = useMap();
+  const flewRef = useRef(false);
+  useEffect(() => {
+    if (!position) {
+      flewRef.current = false;
+      return;
+    }
+    if (flewRef.current) return;
+    flewRef.current = true;
+    const near =
+      distanceMeters(position, { lat: BARZOK_CENTER.lat, lng: BARZOK_CENTER.lng }) < 5000;
+    if (near) map.flyTo([position.lat, position.lng], Math.max(map.getZoom(), 17), { duration: 0.8 });
+  }, [position, map]);
+
+  if (!position) return null;
+  return (
+    <>
+      {position.accuracy > 8 && (
+        <Circle
+          center={[position.lat, position.lng]}
+          radius={position.accuracy}
+          pathOptions={{ color: '#1a73e8', weight: 1, opacity: 0.5, fillColor: '#1a73e8', fillOpacity: 0.1 }}
+          interactive={false}
+        />
+      )}
+      <Marker
+        position={[position.lat, position.lng]}
+        icon={ME_ICON}
+        interactive={false}
+        zIndexOffset={3000}
+      />
+    </>
+  );
+}
+
 export function LeafletMapCanvas({
   lang,
   layers,
   places,
+  allPlaces,
   activeRoute,
   selectedPlaceId,
   onSelectPlace,
   pickMode = false,
   pickedCoords = null,
   onPickCoords,
+  userPosition = null,
+  onLocateMe,
 }: BarzokMapCanvasProps) {
   const [tileStyle, setTileStyle] = useState<TileStyle>('osm');
   const [map, setMap] = useState<L.Map | null>(null);
+  const [zoom, setZoom] = useState<number>(BARZOK_CENTER.defaultZoom);
   const [center, setCenter] = useState<{ lat: number; lng: number }>({
     lat: BARZOK_CENTER.lat,
     lng: BARZOK_CENTER.lng,
@@ -172,10 +254,15 @@ export function LeafletMapCanvas({
     return dict;
   }, [layers]);
 
-  // Spread places that share the same coordinates so each marker stays clickable.
+  const size = pinSize(zoom);
+  const labelsOn = zoom >= LABEL_MIN_ZOOM;
+
+  // Pins: every point place, plus a shape place only while it is selected (so its name shows).
+  // Places that share the same coordinates are spread so each marker stays clickable.
   const positionedPlaces: PositionedPlace[] = useMemo(() => {
+    const pins = places.filter((p) => !p.geometry || p.id === selectedPlaceId);
     const groups: Record<string, PlaceRecord[]> = {};
-    for (const p of places) {
+    for (const p of pins) {
       const key = `${p.latitude.toFixed(4)}_${p.longitude.toFixed(4)}`;
       (groups[key] ||= []).push(p);
     }
@@ -193,7 +280,7 @@ export function LeafletMapCanvas({
           });
         } else {
           const angle = (2 * Math.PI * idx) / group.length;
-          const radiusOffset = 0.00032;
+          const radiusOffset = 0.00022;
           result.push({
             place,
             displayLat: place.latitude + Math.sin(angle) * radiusOffset,
@@ -205,7 +292,7 @@ export function LeafletMapCanvas({
       });
     }
     return result;
-  }, [places, layerDict]);
+  }, [places, layerDict, selectedPlaceId]);
 
   const markers = useMemo(
     () =>
@@ -219,28 +306,41 @@ export function LeafletMapCanvas({
             iconName: pp.layer?.icon || 'landmark',
             selected,
             count: pp.coLocatedCount,
-            label: lang === 'fa' ? pp.place.nameFa : pp.place.nameEn || pp.place.nameFa,
+            label:
+              labelsOn || selected
+                ? lang === 'fa'
+                  ? pp.place.nameFa
+                  : pp.place.nameEn || pp.place.nameFa
+                : null,
+            size: selected ? Math.max(size, 34) : size,
           }),
         };
       }),
-    [positionedPlaces, selectedPlaceId, lang]
+    [positionedPlaces, selectedPlaceId, lang, labelsOn, size]
   );
 
+  const shapes = useMemo(() => places.filter((p) => p.geometry), [places]);
+
   const routeData = useMemo(() => {
-    if (!activeRoute || !activeRoute.stops || activeRoute.stops.length === 0) {
-      return { line: [] as [number, number][], stops: [] as { order: number; pos: [number, number] }[] };
-    }
+    if (!activeRoute) return { line: [] as [number, number][], stops: [] as { order: number; pos: [number, number] }[] };
     const byId: Record<string, PlaceRecord> = {};
-    for (const p of places) byId[p.id] = p;
-    const ordered = [...activeRoute.stops].sort((a, b) => a.stopOrder - b.stopOrder);
+    for (const p of allPlaces ?? places) byId[p.id] = p;
+    const ordered = [...(activeRoute.stops || [])].sort((a, b) => a.stopOrder - b.stopOrder);
     const stops = ordered
       .map((s, idx) => {
         const p = byId[s.placeId];
         return p ? { order: idx + 1, pos: [p.latitude, p.longitude] as [number, number] } : null;
       })
       .filter(Boolean) as { order: number; pos: [number, number] }[];
-    return { line: stops.length >= 2 ? stops.map((s) => s.pos) : [], stops };
-  }, [activeRoute, places]);
+    // Prefer the recorded GPS track; otherwise connect the stops with straight lines.
+    const line =
+      activeRoute.track && activeRoute.track.length >= 2
+        ? activeRoute.track
+        : stops.length >= 2
+        ? stops.map((s) => s.pos)
+        : [];
+    return { line, stops };
+  }, [activeRoute, allPlaces, places]);
 
   const pickIcon = useMemo(
     () => (pickMode && pickedCoords ? buildPickIcon(pickedCoords) : null),
@@ -259,8 +359,15 @@ export function LeafletMapCanvas({
     map?.setView([BARZOK_CENTER.lat, BARZOK_CENTER.lng], BARZOK_CENTER.defaultZoom, { animate: true });
   };
 
+  const handleLocate = () => {
+    onLocateMe?.();
+    if (userPosition && map) {
+      map.flyTo([userPosition.lat, userPosition.lng], Math.max(map.getZoom(), 17), { duration: 0.6 });
+    }
+  };
+
   return (
-    <div className="relative w-full h-full min-h-[420px] bg-[#E5E0D5] overflow-hidden select-none">
+    <div className="relative w-full h-full min-h-[320px] bg-[#E5E0D5] overflow-hidden select-none">
       {/* `isolate` keeps Leaflet's high z-index panes below our overlay controls */}
       <div className="absolute inset-0 isolate">
         <MapContainer
@@ -282,21 +389,76 @@ export function LeafletMapCanvas({
             subdomains={tiles.subdomains ?? 'abc'}
           />
           <SizeSync />
-          <MapEvents pickMode={pickMode} onPickCoords={onPickCoords} onCenterChange={setCenter} />
+          <MapEvents
+            pickMode={pickMode}
+            onPickCoords={onPickCoords}
+            onCenterChange={setCenter}
+            onZoomChange={setZoom}
+          />
           <PanToSelected target={selectedTarget} />
+          <FitRoute routeId={activeRoute?.id ?? null} points={routeData.line} />
 
+          {/* Lines and areas (water channels, gardens, neighbourhoods, streets, hills) */}
+          {shapes.map((p) => {
+            const g = p.geometry!;
+            const layer = p.layerId ? layerDict[p.layerId] : undefined;
+            const color = g.color || layer?.color || '#254B36';
+            const selected = p.id === selectedPlaceId;
+            const handlers = { click: () => onSelectPlace(p) };
+            if (g.type === 'Polygon') {
+              return (
+                <Polygon
+                  key={p.id}
+                  positions={g.coordinates}
+                  interactive={!pickMode}
+                  eventHandlers={handlers}
+                  pathOptions={{
+                    color,
+                    weight: selected ? 4 : 2,
+                    opacity: selected ? 1 : 0.85,
+                    fillColor: color,
+                    fillOpacity: selected ? 0.45 : Math.min(g.fillOpacity ?? 0.3, 0.35),
+                  }}
+                />
+              );
+            }
+            return (
+              <React.Fragment key={p.id}>
+                {/* wide invisible stroke so thin lines are easy to tap on a phone */}
+                <Polyline
+                  positions={g.coordinates}
+                  interactive={!pickMode}
+                  eventHandlers={handlers}
+                  pathOptions={{ color, weight: 18, opacity: 0.01 }}
+                />
+                <Polyline
+                  positions={g.coordinates}
+                  interactive={false}
+                  pathOptions={{
+                    color,
+                    weight: selected ? 7 : 4,
+                    opacity: selected ? 1 : 0.85,
+                    lineCap: 'round',
+                    lineJoin: 'round',
+                  }}
+                />
+              </React.Fragment>
+            );
+          })}
+
+          {/* Active route: recorded track (or straight lines) + numbered stops */}
           {routeData.line.length >= 2 && (
             <>
               <Polyline
                 positions={routeData.line}
-                pathOptions={{ color: '#1C1917', opacity: 0.35, weight: 7, lineCap: 'round', lineJoin: 'round' }}
+                pathOptions={{ color: '#1C1917', opacity: 0.35, weight: 9, lineCap: 'round', lineJoin: 'round' }}
                 interactive={false}
               />
               <Polyline
                 positions={routeData.line}
                 pathOptions={{
                   color: activeRoute?.color || '#D6A83F',
-                  weight: 4.5,
+                  weight: 5,
                   dashArray: '10 6',
                   lineCap: 'round',
                   lineJoin: 'round',
@@ -311,7 +473,7 @@ export function LeafletMapCanvas({
               position={st.pos}
               icon={buildStopIcon(st.order)}
               interactive={false}
-              zIndexOffset={500}
+              zIndexOffset={1500}
             />
           ))}
 
@@ -334,11 +496,13 @@ export function LeafletMapCanvas({
               zIndexOffset={2000}
             />
           )}
+
+          <UserLayer position={userPosition} />
         </MapContainer>
       </div>
 
       {/* Map style switcher + zoom controls */}
-      <div className="absolute bottom-8 left-5 z-30 flex flex-col gap-2">
+      <div className="absolute bottom-8 left-3 sm:left-5 z-30 flex flex-col gap-2">
         <div className="flex items-center bg-[#F5F2E9]/95 border border-[#806B50]/35 rounded-lg shadow-md p-1 gap-1">
           <LayersIcon className="w-3.5 h-3.5 text-[#254B36] mx-1 hidden sm:inline" />
           {[
@@ -381,24 +545,37 @@ export function LeafletMapCanvas({
             type="button"
             onClick={handleResetCenter}
             title={lang === 'fa' ? 'بازگشت به مرکز برزک' : 'Return to Barzok center'}
-            className="p-2.5 text-[#254B36] hover:bg-[#EBE6DF] transition-colors flex items-center justify-center"
+            className={`p-2.5 text-[#254B36] hover:bg-[#EBE6DF] transition-colors flex items-center justify-center ${
+              onLocateMe ? 'border-b border-[#806B50]/20' : ''
+            }`}
           >
             <LocateFixed className="w-4 h-4" />
           </button>
+          {onLocateMe && (
+            <button
+              type="button"
+              onClick={handleLocate}
+              title={lang === 'fa' ? 'مکان من' : 'My location'}
+              aria-label={lang === 'fa' ? 'مکان من' : 'My location'}
+              className={`p-2.5 hover:bg-[#EBE6DF] transition-colors flex items-center justify-center ${
+                userPosition ? 'text-[#1a73e8]' : 'text-[#1C1917]'
+              }`}
+            >
+              <Navigation className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
 
       {/* Coordinate & active route status bar (sits above Leaflet's attribution line) */}
-      <div className="absolute bottom-8 right-5 z-20 hidden sm:flex items-center gap-3 px-3.5 py-2 rounded-lg bg-[#F5F2E9]/95 border border-[#806B50]/35 shadow-md text-xs text-[#57534E]">
+      <div className="absolute bottom-8 right-5 z-20 hidden md:flex items-center gap-3 px-3.5 py-2 rounded-lg bg-[#F5F2E9]/95 border border-[#806B50]/35 shadow-md text-xs text-[#57534E]">
         <Compass className="w-4 h-4 text-[#254B36] shrink-0" />
         <span className="font-mono-num" dir="ltr">
           {center.lat.toFixed(4)}° N, {center.lng.toFixed(4)}° E
         </span>
         <span aria-hidden="true">·</span>
         <span>
-          {lang === 'fa'
-            ? `${positionedPlaces.length} مکان فعال`
-            : `${positionedPlaces.length} active locations`}
+          {lang === 'fa' ? `${places.length} مکان فعال` : `${places.length} active locations`}
         </span>
         {activeRoute && (
           <>

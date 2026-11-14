@@ -1,0 +1,17 @@
+[
+  {
+    "id": "contrib-1",
+    "submissionType": "personal_memory",
+    "title": "[مشارکت نمونه آزمایشی] خاطره جمع‌آوری گردو در پاییز برزک",
+    "description": "این یک مشارکت نمونه در صف بررسی (Pending Review) است تا مدیر سامانه بتواند فرآیند تایید، رد یا درخواست اطلاعات بیشتر را در بخش «مدیریت مشارکت‌های مردمی» آزمایش کند.",
+    "latitude": 33.78383,
+    "longitude": 51.22902,
+    "contributorName": "شركت‌كننده آزمایشی (Demo Contributor)",
+    "contactInfo": "demo-private-contact@example.com",
+    "consentToPublish": true,
+    "moderationStatus": "pending_review",
+    "adminNotes": "رکورد آزمایشی اولیه جهت تست صف بررسی مدیریت",
+    "createdAt": "2026-11-12T08:25:00.000Z",
+    "updatedAt": "2026-11-12T08:25:00.000Z"
+  }
+]

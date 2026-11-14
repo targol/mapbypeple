@@ -33,6 +33,8 @@ import { BarzokMapCanvas } from './components/BarzokMapCanvas';
 import { LocationDetailPanel } from './components/LocationDetailPanel';
 import { ContributionModal } from './components/ContributionModal';
 import { AdminDashboard } from './components/AdminDashboard';
+import { WalkGuide } from './components/WalkGuide';
+import { useGeolocation } from './hooks/useGeolocation';
 
 type PublicSection = 'map' | 'stories' | 'people' | 'about' | 'admin';
 
@@ -76,7 +78,7 @@ function BarzokAppContent() {
 
   // Layer visibility state (initialized dynamically from database layers)
   const [enabledLayerIds, setEnabledLayerIds] = useState<Record<string, boolean>>({});
-  const [layerPanelOpen, setLayerPanelOpen] = useState<boolean>(true);
+  const [layerPanelOpen, setLayerPanelOpen] = useState<boolean>(() => window.innerWidth >= 768);
   const [mobileSheetOpen, setMobileSheetOpen] = useState<boolean>(false);
 
   // Search & Map/List View Toggle
@@ -96,6 +98,15 @@ function BarzokAppContent() {
     lng: number;
   } | null>(null);
   const [copiedEmbed, setCopiedEmbed] = useState<boolean>(false);
+  const geo = useGeolocation();
+  const [walkOpen, setWalkOpen] = useState<boolean>(false);
+  const [walkFocusId, setWalkFocusId] = useState<string | null>(null);
+
+  const startRoute = (rt: RouteRecord | null) => {
+    setActiveRoute(rt);
+    setWalkOpen(Boolean(rt));
+    if (rt) geo.start();
+  };
 
   // Sync HTML dir and lang attributes
   useEffect(() => {
@@ -253,6 +264,25 @@ function BarzokAppContent() {
     [bundle.places]
   );
 
+  const walkGuide =
+    activeRoute && walkOpen ? (
+      <WalkGuide
+        lang={lang}
+        route={activeRoute}
+        allPlaces={bundle.places}
+        position={geo.position}
+        geoStatus={geo.status}
+        onStartGps={geo.start}
+        onFocusPlace={(p) => setWalkFocusId(p.id)}
+        onOpenDetails={(p) => handleSelectPlace(p)}
+        onClose={() => {
+          setWalkFocusId(null);
+          setWalkOpen(false);
+          setActiveRoute(null);
+        }}
+      />
+    ) : null;
+
   // Admin route view
   if (activeSection === 'admin' && !isEmbedMode) {
     return (
@@ -329,17 +359,39 @@ function BarzokAppContent() {
                 })}
               </div>
             )}
+            {bundle.routes.length > 0 && (
+              <div className="p-2.5 border-t border-[#806B50]/20 space-y-1">
+                {bundle.routes.map((rt) => (
+                  <button
+                    key={rt.id}
+                    type="button"
+                    onClick={() => startRoute(activeRoute?.id === rt.id ? null : rt)}
+                    className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg bg-[#254B36] text-[#F5F2E9] text-xs font-semibold"
+                  >
+                    <RouteIcon className="w-4 h-4 shrink-0" />
+                    <span className="truncate">
+                      {lang === 'fa' ? 'شروع پیاده‌روی: ' : 'Start walk: '}
+                      {lang === 'fa' ? rt.titleFa : rt.titleEn || rt.titleFa}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
-          <div className="flex-1 h-full">
+          <div className="flex-1 h-full relative">
             <BarzokMapCanvas
               lang={lang}
               layers={bundle.layers}
               places={filteredPlaces}
+              allPlaces={bundle.places}
               activeRoute={activeRoute}
-              selectedPlaceId={selectedPlace?.id || null}
+              selectedPlaceId={selectedPlace?.id || walkFocusId}
               onSelectPlace={handleSelectPlace}
+              userPosition={geo.position}
+              onLocateMe={geo.start}
             />
+            {walkGuide}
           </div>
 
           {selectedPlace && (
@@ -365,7 +417,7 @@ function BarzokAppContent() {
 
   // `?embed=1` works on any static host (no server rewrite needed, unlike `/embed`).
   const embedUrl = `${window.location.origin}${import.meta.env.BASE_URL}?embed=1`;
-  const iframeSnippet = `<iframe src="${embedUrl}" width="100%" height="680" style="border:0; border-radius: 12px; overflow: hidden;" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="مردمنگار برزک | Barzok People Map"></iframe>`;
+  const iframeSnippet = `<iframe src="${embedUrl}" width="100%" height="680" style="border:0; border-radius: 12px; overflow: hidden;" allow="geolocation" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="مردمنگار برزک | Barzok People Map"></iframe>`;
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F5F2E9] text-[#1C1917]">
@@ -729,7 +781,7 @@ function BarzokAppContent() {
                           <button
                             key={rt.id}
                             type="button"
-                            onClick={() => setActiveRoute(isActive ? null : rt)}
+                            onClick={() => startRoute(isActive ? null : rt)}
                             className={`w-full text-start p-2.5 rounded-lg border text-xs transition-colors ${
                               isActive
                                 ? 'bg-[#254B36] text-[#F5F2E9] border-[#254B36]'
@@ -767,14 +819,17 @@ function BarzokAppContent() {
             )}
 
             {viewMode === 'map' ? (
-              <div className="flex-1 w-full h-full">
+              <div className="flex-1 w-full h-full relative">
                 <BarzokMapCanvas
                   lang={lang}
                   layers={bundle.layers}
                   places={filteredPlaces}
+                  allPlaces={bundle.places}
                   activeRoute={activeRoute}
-                  selectedPlaceId={selectedPlace?.id || null}
+                  selectedPlaceId={selectedPlace?.id || walkFocusId}
                   onSelectPlace={(p) => handleSelectPlace(p)}
+                  userPosition={geo.position}
+                  onLocateMe={geo.start}
                   pickMode={pickingForContribution}
                   pickedCoords={pickedContributionCoords}
                   onPickCoords={(coords) => {
@@ -783,6 +838,7 @@ function BarzokAppContent() {
                     setContributionOpen(true);
                   }}
                 />
+                {walkGuide}
               </div>
             ) : (
               /* List View of Filtered Places */

@@ -104,3 +104,12 @@ the old Express server. Two ways in:
 Create a component that implements `BarzokMapCanvasProps` (see `docs/future-google-maps/` for the previous
 implementation), keep the API key in an environment variable restricted by HTTP referrer, and switch to it in
 `src/components/BarzokMapCanvas.tsx`.
+
+## Real data, guest walks and audio
+
+- `npm run import:kml -- path/to/map.kml` rebuilds `src/data/seed/{layers,places}.json` and `docs/places-index.csv` from a Google My Maps KML export. Place ids stay stable across re-imports.
+- `npm run import:gpx -- path/to/track.gpx --slug=my-route` turns a Wikiloc/GPX track into a walking route; stops are the places within a few metres of the track (review them in /admin).
+- **Audio:** put the recordings under `public/audio/` (or any URL, e.g. WordPress media) and list them by place id in `src/data/audio.json`:
+  `{ "lodging-003": [{ "url": "audio/lodging-003.mp3", "titleFa": "قصه این مکان" }] }`. Ids are in `docs/places-index.csv`. The walk guide and the place panel show the player automatically.
+- Guest walk: choose a route, turn on GPS, and the card shows distance/direction to the next stop, its story and audio. GPS needs HTTPS; in an iframe use `allow="geolocation"` (already in the snippet on the About page).
+- Changing the seed (new `meta.json` version) makes browsers drop their old cached copy.

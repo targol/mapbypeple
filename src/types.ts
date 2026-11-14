@@ -37,9 +37,20 @@ export interface LayerRecord {
   updatedAt: string;
 }
 
+// Lines (water channels, streets) and areas (gardens, neighbourhoods, hills) drawn on the map.
+// Coordinates are [lat, lng]. A place without `geometry` is a plain pin.
+export interface PlaceGeometry {
+  type: 'LineString' | 'Polygon';
+  coordinates: [number, number][];
+  color?: string;
+  fillOpacity?: number;
+}
+
 export interface PlaceRecord {
   id: string;
   slug: string;
+  /** Optional shape; `latitude`/`longitude` are then a representative point (centroid / middle). */
+  geometry?: PlaceGeometry;
   layerId?: string | null;
   additionalLayerIds: string; // JSON stringified string[]
   nameFa: string;
@@ -150,6 +161,8 @@ export interface RouteRecord {
   verificationStatus: string;
   isDemo: boolean;
   stops: RouteStopRecord[];
+  /** Recorded walking track as [lat, lng] points (from a GPX file). Falls back to straight lines between stops. */
+  track?: [number, number][];
 }
 
 export interface MediaRecord {

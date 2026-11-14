@@ -1,18 +1,1 @@
-[
-  {
-    "id": "pp-1",
-    "placeId": "place-barzok-weaving-craft-demo",
-    "personId": "person-1",
-    "relationshipRoleFa": "الگوی استادکار مرتبط با کارگاه (نمونه آزمایشی)",
-    "createdAt": "2026-11-12T08:14:00.000Z",
-    "updatedAt": "2026-11-12T08:14:00.000Z"
-  },
-  {
-    "id": "pp-2",
-    "placeId": "place-barzok-rosewater-workshop-demo",
-    "personId": "person-2",
-    "relationshipRoleFa": "الگوی گلاب‌گیر سنتی مرتبط با کارگاه (نمونه آزمایشی)",
-    "createdAt": "2026-11-12T08:15:00.000Z",
-    "updatedAt": "2026-11-12T08:15:00.000Z"
-  }
-]
+[]

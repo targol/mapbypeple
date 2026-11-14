@@ -1,0 +1,19 @@
+[
+  {
+    "id": "route-barzok-garden-to-historic-core-demo",
+    "slug": "barzok-garden-to-historic-core-demo",
+    "titleFa": "[مسیر نمونه آزمایشی] گذر از کوچه‌باغ‌ها به بافت تاریخی برزک",
+    "titleEn": "[Demo Route] From Terraced Orchards to Historic Core",
+    "descriptionFa": "مسیر پیاده‌روی آزمایشی برای نمایش قابلیت «مسیرهای داستانی» و توقفگاه‌های ترتیبی روی نقشه برزک.",
+    "descriptionEn": "Demonstration walking route showcasing sequential storytelling stops across Barzok.",
+    "durationMinutes": 75,
+    "distanceKm": 1.8,
+    "difficulty": "easy",
+    "color": "#D6A83F",
+    "publicationStatus": "published",
+    "verificationStatus": "demo",
+    "isDemo": true,
+    "createdAt": "2026-11-12T08:20:00.000Z",
+    "updatedAt": "2026-11-12T08:20:00.000Z"
+  }
+]

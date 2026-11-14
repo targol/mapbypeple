@@ -1,0 +1,23 @@
+[
+  {
+    "id": "ps-1",
+    "placeId": "place-barzok-historic-center-demo",
+    "storyId": "story-mountain-alleys-memory-demo-story",
+    "createdAt": "2026-11-12T08:16:00.000Z",
+    "updatedAt": "2026-11-12T08:16:00.000Z"
+  },
+  {
+    "id": "ps-2",
+    "placeId": "place-barzok-rosewater-workshop-demo",
+    "storyId": "story-spring-rose-harvest-demo-story",
+    "createdAt": "2026-11-12T08:17:00.000Z",
+    "updatedAt": "2026-11-12T08:17:00.000Z"
+  },
+  {
+    "id": "ps-3",
+    "placeId": "place-barzok-walnut-orchards-path-demo",
+    "storyId": "story-mountain-alleys-memory-demo-story",
+    "createdAt": "2026-11-12T08:18:00.000Z",
+    "updatedAt": "2026-11-12T08:18:00.000Z"
+  }
+]

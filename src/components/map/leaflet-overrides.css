@@ -20,11 +20,12 @@
   border: 0;
 }
 
-/* Place pin */
+/* Place pin. --s (size in px) is set per zoom level from the component so the ~200 pins stay
+   readable when zoomed out. */
 .barzok-pin {
   position: relative;
-  width: 40px;
-  height: 40px;
+  width: var(--s, 40px);
+  height: var(--s, 40px);
   transition: transform 0.15s ease;
 }
 .barzok-pin:hover {
@@ -34,19 +35,20 @@
   transform: scale(1.2);
 }
 .barzok-pin__dot {
-  width: 40px;
-  height: 40px;
+  width: var(--s, 40px);
+  height: var(--s, 40px);
   border-radius: 9999px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #f5f2e9;
   border: 2px solid #f5f2e9;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.28);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  box-sizing: border-box;
 }
 .barzok-pin__dot svg {
-  width: 20px;
-  height: 20px;
+  width: calc(var(--s, 40px) * 0.5);
+  height: calc(var(--s, 40px) * 0.5);
 }
 .barzok-pin.is-selected .barzok-pin__dot {
   border-color: #d6a83f;
@@ -70,7 +72,7 @@
 }
 .barzok-pin__label {
   position: absolute;
-  top: 44px;
+  top: calc(var(--s, 40px) + 4px);
   left: 50%;
   transform: translateX(-50%);
   max-width: 190px;
@@ -138,4 +140,46 @@
   justify-content: center;
   font-size: 11px;
   font-weight: 700;
+}
+
+/* Visitor's live position (guided walk) */
+.barzok-me {
+  position: relative;
+  width: 20px;
+  height: 20px;
+}
+.barzok-me__dot {
+  position: absolute;
+  inset: 3px;
+  border-radius: 9999px;
+  background: #1a73e8;
+  border: 3px solid #fff;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.45);
+}
+.barzok-me__pulse {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: rgba(26, 115, 232, 0.35);
+  animation: barzok-pulse 2s ease-out infinite;
+}
+@keyframes barzok-pulse {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .barzok-me__pulse {
+    animation: none;
+  }
+}
+
+/* Numbered route stop badge (sits at the top-left corner of the place pin) */
+.barzok-stop {
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
 }

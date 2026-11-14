@@ -1,42 +1,200 @@
 [
   {
-    "id": "stop-1",
-    "routeId": "route-barzok-garden-to-historic-core-demo",
-    "placeId": "place-barzok-walnut-orchards-path-demo",
+    "id": "route-house-garden-lane-mosalla-stop-1",
+    "routeId": "route-house-garden-lane-mosalla",
+    "placeId": "lodging-003",
     "stopOrder": 1,
-    "noteFa": "ایستگاه اول (نمونه): آغاز مسیر از جویبار و کوچه‌باغ‌های گردو",
-    "noteEn": "Stop 1 (Demo): Starting at the terraced walnut orchards stream",
-    "createdAt": "2026-11-12T08:21:00.000Z",
-    "updatedAt": "2026-11-12T08:21:00.000Z"
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
   },
   {
-    "id": "stop-2",
-    "routeId": "route-barzok-garden-to-historic-core-demo",
-    "placeId": "place-barzok-rosewater-workshop-demo",
+    "id": "route-house-garden-lane-mosalla-stop-2",
+    "routeId": "route-house-garden-lane-mosalla",
+    "placeId": "gardens-064",
     "stopOrder": 2,
-    "noteFa": "ایستگاه دوم (نمونه): بازدید از کارگاه سنتی گلاب‌گیری",
-    "noteEn": "Stop 2 (Demo): Visiting the traditional rosewater workshop",
-    "createdAt": "2026-11-12T08:22:00.000Z",
-    "updatedAt": "2026-11-12T08:22:00.000Z"
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
   },
   {
-    "id": "stop-3",
-    "routeId": "route-barzok-garden-to-historic-core-demo",
-    "placeId": "place-barzok-weaving-craft-demo",
+    "id": "route-house-garden-lane-mosalla-stop-3",
+    "routeId": "route-house-garden-lane-mosalla",
+    "placeId": "bakeries-010",
     "stopOrder": 3,
-    "noteFa": "ایستگاه سوم (نمونه): کارگاه نساجی و صنایع دستی",
-    "noteEn": "Stop 3 (Demo): Traditional handloom weaving workshop",
-    "createdAt": "2026-11-12T08:23:00.000Z",
-    "updatedAt": "2026-11-12T08:23:00.000Z"
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
   },
   {
-    "id": "stop-4",
-    "routeId": "route-barzok-garden-to-historic-core-demo",
-    "placeId": "place-barzok-historic-center-demo",
+    "id": "route-house-garden-lane-mosalla-stop-4",
+    "routeId": "route-house-garden-lane-mosalla",
+    "placeId": "public-places-013",
     "stopOrder": 4,
-    "noteFa": "ایستگاه چهارم (نمونه): بافت پلکانی و چشم‌انداز هسته تاریخی برزک",
-    "noteEn": "Stop 4 (Demo): Historic stepped hillside architecture overlook",
-    "createdAt": "2026-11-12T08:24:00.000Z",
-    "updatedAt": "2026-11-12T08:24:00.000Z"
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-garden-lane-mosalla-stop-5",
+    "routeId": "route-house-garden-lane-mosalla",
+    "placeId": "gardens-050",
+    "stopOrder": 5,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-garden-lane-mosalla-stop-6",
+    "routeId": "route-house-garden-lane-mosalla",
+    "placeId": "bakeries-012",
+    "stopOrder": 6,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-garden-lane-mosalla-stop-7",
+    "routeId": "route-house-garden-lane-mosalla",
+    "placeId": "gardens-051",
+    "stopOrder": 7,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-garden-lane-mosalla-stop-8",
+    "routeId": "route-house-garden-lane-mosalla",
+    "placeId": "public-places-034",
+    "stopOrder": 8,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-garden-lane-mosalla-stop-9",
+    "routeId": "route-house-garden-lane-mosalla",
+    "placeId": "gardens-052",
+    "stopOrder": 9,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-garden-lane-mosalla-stop-10",
+    "routeId": "route-house-garden-lane-mosalla",
+    "placeId": "gardens-031",
+    "stopOrder": 10,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-garden-lane-mosalla-stop-11",
+    "routeId": "route-house-garden-lane-mosalla",
+    "placeId": "religious-012",
+    "stopOrder": 11,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-garden-lane-mosalla-stop-12",
+    "routeId": "route-house-garden-lane-mosalla",
+    "placeId": "gardens-053",
+    "stopOrder": 12,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-garden-lane-mosalla-stop-13",
+    "routeId": "route-house-garden-lane-mosalla",
+    "placeId": "gardens-054",
+    "stopOrder": 13,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-garden-lane-mosalla-stop-14",
+    "routeId": "route-house-garden-lane-mosalla",
+    "placeId": "gardens-085",
+    "stopOrder": 14,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-garden-lane-mosalla-stop-15",
+    "routeId": "route-house-garden-lane-mosalla",
+    "placeId": "public-places-002",
+    "stopOrder": 15,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-garden-lane-mosalla-stop-16",
+    "routeId": "route-house-garden-lane-mosalla",
+    "placeId": "public-places-024",
+    "stopOrder": 16,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-garden-lane-mosalla-stop-17",
+    "routeId": "route-house-garden-lane-mosalla",
+    "placeId": "lodging-005",
+    "stopOrder": 17,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-garden-lane-mosalla-stop-18",
+    "routeId": "route-house-garden-lane-mosalla",
+    "placeId": "bakeries-004",
+    "stopOrder": 18,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-garden-lane-mosalla-stop-19",
+    "routeId": "route-house-garden-lane-mosalla",
+    "placeId": "streets-016",
+    "stopOrder": 19,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-garden-lane-mosalla-stop-20",
+    "routeId": "route-house-garden-lane-mosalla",
+    "placeId": "public-places-045",
+    "stopOrder": 20,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-garden-lane-mosalla-stop-21",
+    "routeId": "route-house-garden-lane-mosalla",
+    "placeId": "public-places-035",
+    "stopOrder": 21,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-garden-lane-mosalla-stop-22",
+    "routeId": "route-house-garden-lane-mosalla",
+    "placeId": "bakeries-001",
+    "stopOrder": 22,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
   }
 ]

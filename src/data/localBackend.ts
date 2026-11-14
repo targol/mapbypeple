@@ -23,7 +23,7 @@ import type {
   StoryRecord,
 } from '../types';
 import { BARZOK_CENTER } from '../types';
-import { SEED } from './seed';
+import { AUDIO_MANIFEST, SEED, SEED_VERSION } from './seed';
 
 export const STORAGE_KEY = 'barzok-people-map:v1';
 
@@ -41,6 +41,7 @@ interface LocalDb {
   contributions: ContributionRecord[];
   placePeople: PlacePersonLink[];
   placeStories: PlaceStoryLink[];
+  seedVersion?: string;
 }
 
 const COLLECTIONS: (keyof LocalDb)[] = [
@@ -78,7 +79,7 @@ function newId(prefix: string): string {
 let cache: LocalDb | null = null;
 
 function seedDb(): LocalDb {
-  return clone({ ...SEED, media: [] as MediaRecord[] }) as LocalDb;
+  return clone({ ...SEED, media: [] as MediaRecord[], seedVersion: SEED_VERSION }) as LocalDb;
 }
 
 function readStorage(): LocalDb | null {
@@ -86,7 +87,12 @@ function readStorage(): LocalDb | null {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
-    if (parsed && Array.isArray(parsed.layers) && Array.isArray(parsed.places)) {
+    if (
+      parsed &&
+      Array.isArray(parsed.layers) &&
+      Array.isArray(parsed.places) &&
+      parsed.seedVersion === SEED_VERSION // older cached data (e.g. the demo seed) is discarded
+    ) {
       return parsed as LocalDb;
     }
   } catch {
@@ -353,6 +359,20 @@ function syncApprovedContributionsToPlaces() {
 // Bundles
 // ---------------------------------------------------------------------------
 
+// Audio files listed in src/data/audio.json are attached to places by id at read time,
+// so the large places.json never has to be edited by hand.
+function withAudio(place: PlaceRecord): PlaceRecord {
+  const extra = AUDIO_MANIFEST[place.id];
+  if (!extra || extra.length === 0) return place;
+  let current: unknown[] = [];
+  try {
+    current = JSON.parse(place.audioRecordings || '[]');
+  } catch {
+    current = [];
+  }
+  return { ...place, audioRecordings: JSON.stringify([...current, ...extra]) };
+}
+
 function routesWithStops(rows: RouteRow[]): RouteRecord[] {
   const db = getDb();
   return rows.map((r) => ({
@@ -372,7 +392,7 @@ export function getPublicMapBundle(): PublicMapBundle {
 
   return withAssetBase({
     layers: db.layers.filter((l) => l.isActive).sort((a, b) => a.displayOrder - b.displayOrder),
-    places: published(db.places).sort(byCreatedDesc),
+    places: published(db.places).sort(byCreatedDesc).map(withAudio),
     people: published(db.people).sort(byCreatedDesc),
     stories: published(db.stories).sort(byCreatedDesc),
     events: published(db.events).sort(byCreatedDesc),

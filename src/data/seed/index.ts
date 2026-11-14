@@ -27,6 +27,17 @@ import routeStops from './routeStops.json';
 import placePeople from './placePeople.json';
 import placeStories from './placeStories.json';
 import contributions from './contributions.json';
+import meta from './meta.json';
+import audioManifest from '../audio.json';
+
+/** Bump `version` in meta.json (the importer does it) and browsers drop their old cached copy of the seed. */
+export const SEED_VERSION: string = String((meta as { version: unknown }).version);
+
+/** placeId -> list of audio files, filled in by hand once the recordings exist (see src/data/audio.json). */
+export const AUDIO_MANIFEST = audioManifest as unknown as Record<
+  string,
+  { url: string; titleFa: string; titleEn?: string; duration?: string }[]
+>;
 
 export const SEED = {
   layers: layers as unknown as LayerRecord[],

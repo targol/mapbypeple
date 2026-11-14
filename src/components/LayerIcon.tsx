@@ -17,8 +17,10 @@ import {
   Route,
   Sparkles,
   Trees,
+  Moon,
   Users,
   Utensils,
+  Wheat,
 } from 'lucide-react';
 
 interface LayerIconProps {
@@ -40,6 +42,8 @@ export const AVAILABLE_LAYER_ICONS = [
   { id: 'camera', labelFa: 'عکس قدیمی', labelEn: 'Archival Photo' },
   { id: 'music', labelFa: 'آوا و موسیقی', labelEn: 'Audio & Oral' },
   { id: 'compass', labelFa: 'نقطه دیدنی', labelEn: 'Point of Interest' },
+  { id: 'moon', labelFa: 'مکان مذهبی', labelEn: 'Religious Place' },
+  { id: 'wheat', labelFa: 'نانوایی و غله', labelEn: 'Bakery & Grain' },
 ];
 
 export function LayerIcon({ name, className = 'w-4 h-4' }: LayerIconProps) {
@@ -80,6 +84,10 @@ export function LayerIcon({ name, className = 'w-4 h-4' }: LayerIconProps) {
       return <Flame className={className} />;
     case 'layers':
       return <Layers className={className} />;
+    case 'moon':
+      return <Moon className={className} />;
+    case 'wheat':
+      return <Wheat className={className} />;
     default:
       return <MapPin className={className} />;
   }

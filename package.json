@@ -9,7 +9,9 @@
     "start": "vite preview --port=3000 --host=0.0.0.0",
     "preview": "vite preview --port=3000 --host=0.0.0.0",
     "clean": "rm -rf dist",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "import:kml": "node scripts/import-kml.mjs",
+    "import:gpx": "node scripts/import-gpx.mjs"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
@@ -28,6 +30,7 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "autoprefixer": "^10.4.21",
+    "fast-xml-parser": "^5.12.1",
     "tailwindcss": "^4.3.3",
     "typescript": "^7.0.2"
   }
