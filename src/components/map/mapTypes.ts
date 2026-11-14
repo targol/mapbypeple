@@ -18,4 +18,7 @@ export interface BarzokMapCanvasProps {
   userPosition?: { lat: number; lng: number; accuracy: number } | null;
   /** Shows a "my location" button; called when pressed (should start GPS if it is not running). */
   onLocateMe?: () => void;
+  /** Keep the map centred on the visitor while walking. Turned off when the visitor drags the map. */
+  followUser?: boolean;
+  onFollowChange?: (follow: boolean) => void;
 }

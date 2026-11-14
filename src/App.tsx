@@ -123,6 +123,7 @@ function BarzokAppContent() {
   const geo = useGeolocation();
   const [walkOpen, setWalkOpen] = useState<boolean>(false);
   const [walkFocusId, setWalkFocusId] = useState<string | null>(null);
+  const [followUser, setFollowUser] = useState<boolean>(false);
 
   const setAllLayers = (on: boolean) =>
     setEnabledLayerIds(() => {
@@ -147,7 +148,6 @@ function BarzokAppContent() {
   const startRoute = (rt: RouteRecord | null) => {
     setActiveRoute(rt);
     setWalkOpen(Boolean(rt));
-    if (rt) geo.start();
   };
 
   // Sync HTML dir and lang attributes
@@ -307,8 +307,11 @@ function BarzokAppContent() {
         onStartGps={geo.start}
         onFocusPlace={(p) => setWalkFocusId(p.id)}
         onOpenDetails={(p) => handleSelectPlace(p)}
+        followUser={followUser}
+        onFollowChange={setFollowUser}
         onClose={() => {
           setWalkFocusId(null);
+          setFollowUser(false);
           setWalkOpen(false);
           setActiveRoute(null);
         }}
@@ -423,6 +426,8 @@ function BarzokAppContent() {
               onSelectPlace={handleSelectPlace}
               userPosition={geo.position}
               onLocateMe={geo.start}
+                  followUser={followUser}
+                  onFollowChange={setFollowUser}
             />
             {walkGuide}
           </div>
@@ -857,6 +862,8 @@ function BarzokAppContent() {
                   onSelectPlace={(p) => handleSelectPlace(p)}
                   userPosition={geo.position}
                   onLocateMe={geo.start}
+                  followUser={followUser}
+                  onFollowChange={setFollowUser}
                   pickMode={pickingForContribution}
                   pickedCoords={pickedContributionCoords}
                   onPickCoords={(coords) => {

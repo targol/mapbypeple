@@ -80,10 +80,11 @@ function buildPlaceIcon(opts: {
   count: number;
   label: string | null;
   size: number;
+  dim?: boolean;
 }) {
   const svg = renderToStaticMarkup(<LayerIcon name={opts.iconName} className="" />);
   const html = `
-    <div class="barzok-pin${opts.selected ? ' is-selected' : ''}" style="--s:${opts.size}px">
+    <div class="barzok-pin${opts.selected ? ' is-selected' : ''}${opts.dim ? ' is-dim' : ''}" style="--s:${opts.size}px">
       <div class="barzok-pin__dot" style="background-color:${escapeHtml(opts.color)}">${svg}</div>
       ${opts.count > 1 && opts.size >= 26 ? `<span class="barzok-pin__count">${opts.count}</span>` : ''}
       ${opts.label ? `<div class="barzok-pin__label" dir="auto">${escapeHtml(opts.label)}</div>` : ''}
@@ -182,9 +183,39 @@ function FitRoute({ routeId, points }: { routeId: string | null; points: [number
   const map = useMap();
   useEffect(() => {
     if (!routeId || points.length < 2) return;
-    map.fitBounds(L.latLngBounds(points), { padding: [40, 40], maxZoom: 17, animate: true });
+    // leave room at the bottom for the route card
+    map.fitBounds(L.latLngBounds(points), {
+      paddingTopLeft: [30, 100],
+      paddingBottomRight: [30, window.innerHeight < 700 ? 280 : 340],
+      maxZoom: 17,
+      animate: true,
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [routeId, map]);
+  return null;
+}
+
+// While following, keep the visitor in the middle of the map. Dragging the map hands control back.
+function FollowUser({
+  follow,
+  position,
+  onFollowChange,
+}: {
+  follow: boolean;
+  position: { lat: number; lng: number } | null;
+  onFollowChange?: (follow: boolean) => void;
+}) {
+  const map = useMap();
+  useMapEvents({
+    dragstart() {
+      if (follow) onFollowChange?.(false);
+    },
+  });
+  useEffect(() => {
+    if (!follow || !position) return;
+    map.setView([position.lat, position.lng], Math.max(map.getZoom(), 17), { animate: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [follow, position?.lat, position?.lng, map]);
   return null;
 }
 
@@ -239,6 +270,8 @@ export function LeafletMapCanvas({
   onPickCoords,
   userPosition = null,
   onLocateMe,
+  followUser = false,
+  onFollowChange,
 }: BarzokMapCanvasProps) {
   const [tileStyle, setTileStyle] = useState<TileStyle>('osm');
   const [map, setMap] = useState<L.Map | null>(null);
@@ -294,6 +327,11 @@ export function LeafletMapCanvas({
     return result;
   }, [places, layerDict, selectedPlaceId]);
 
+  const routeStopIds = useMemo(
+    () => new Set((activeRoute?.stops ?? []).map((st) => st.placeId)),
+    [activeRoute]
+  );
+
   const markers = useMemo(
     () =>
       positionedPlaces.map((pp) => {
@@ -306,8 +344,9 @@ export function LeafletMapCanvas({
             iconName: pp.layer?.icon || 'landmark',
             selected,
             count: pp.coLocatedCount,
+            dim: Boolean(activeRoute) && !routeStopIds.has(pp.place.id) && !selected,
             label:
-              labelsOn || selected
+              labelsOn || selected || (activeRoute && zoom >= 16 && routeStopIds.has(pp.place.id))
                 ? lang === 'fa'
                   ? pp.place.nameFa
                   : pp.place.nameEn || pp.place.nameFa
@@ -316,7 +355,7 @@ export function LeafletMapCanvas({
           }),
         };
       }),
-    [positionedPlaces, selectedPlaceId, lang, labelsOn, size]
+    [positionedPlaces, selectedPlaceId, lang, labelsOn, size, activeRoute, routeStopIds, zoom]
   );
 
   const shapes = useMemo(() => places.filter((p) => p.geometry), [places]);
@@ -361,6 +400,7 @@ export function LeafletMapCanvas({
 
   const handleLocate = () => {
     onLocateMe?.();
+    onFollowChange?.(true);
     if (userPosition && map) {
       map.flyTo([userPosition.lat, userPosition.lng], Math.max(map.getZoom(), 17), { duration: 0.6 });
     }
@@ -498,6 +538,7 @@ export function LeafletMapCanvas({
           )}
 
           <UserLayer position={userPosition} />
+          <FollowUser follow={followUser} position={userPosition} onFollowChange={onFollowChange} />
         </MapContainer>
       </div>
 
@@ -555,10 +596,10 @@ export function LeafletMapCanvas({
             <button
               type="button"
               onClick={handleLocate}
-              title={lang === 'fa' ? 'مکان من' : 'My location'}
+              title={lang === 'fa' ? 'مکان من و دنبال کردن' : 'My location (follow)'}
               aria-label={lang === 'fa' ? 'مکان من' : 'My location'}
               className={`p-2.5 hover:bg-[#EBE6DF] transition-colors flex items-center justify-center ${
-                userPosition ? 'text-[#1a73e8]' : 'text-[#1C1917]'
+                followUser ? 'bg-[#1a73e8] text-white' : userPosition ? 'text-[#1a73e8]' : 'text-[#1C1917]'
               }`}
             >
               <Navigation className="w-4 h-4" />

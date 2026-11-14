@@ -48,3 +48,34 @@ export function formatDistance(meters: number, lang: Language): string {
 export function formatNumber(n: number, lang: Language): string {
   return n.toLocaleString(lang === 'fa' ? 'fa-IR' : 'en-US');
 }
+
+export interface TrackMatch {
+  /** Distance from the point to the closest spot on the track, in metres. */
+  offTrack: number;
+  /** Metres walked along the track up to that closest spot. */
+  along: number;
+  total: number;
+}
+
+/** Closest point on a [lat, lng] polyline (flat local projection: accurate enough for a village walk). */
+export function matchToTrack(point: LatLng, track: [number, number][]): TrackMatch | null {
+  if (track.length < 2) return null;
+  const kx = Math.cos(toRad(point.lat)) * 111320;
+  const ky = 110574;
+  const xy = track.map(([lat, lng]) => [(lng - point.lng) * kx, (lat - point.lat) * ky] as const);
+  let best = { d: Infinity, along: 0 };
+  let acc = 0;
+  for (let i = 0; i < xy.length - 1; i++) {
+    const [ax, ay] = xy[i];
+    const [bx, by] = xy[i + 1];
+    const dx = bx - ax;
+    const dy = by - ay;
+    const len2 = dx * dx + dy * dy;
+    const segLen = Math.sqrt(len2);
+    const t = len2 === 0 ? 0 : Math.max(0, Math.min(1, -(ax * dx + ay * dy) / len2));
+    const d = Math.hypot(ax + t * dx, ay + t * dy);
+    if (d < best.d) best = { d, along: acc + t * segLen };
+    acc += segLen;
+  }
+  return { offTrack: best.d, along: best.along, total: acc };
+}

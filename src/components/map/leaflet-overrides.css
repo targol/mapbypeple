@@ -183,3 +183,7 @@
 .barzok-stop {
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
 }
+
+/* Places that are not part of the active route fade back so the route reads at a glance. */
+.barzok-pin.is-dim { opacity: 0.35; }
+.barzok-pin.is-dim:hover { opacity: 1; }
