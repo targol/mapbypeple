@@ -11,7 +11,8 @@
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
     "import:kml": "node scripts/import-kml.mjs",
-    "import:gpx": "node scripts/import-gpx.mjs"
+    "import:gpx": "node scripts/import-gpx.mjs",
+    "import:images": "node scripts/download-images.mjs"
   },
   "dependencies": {
     "@fontsource/cormorant-garamond": "^5.3.0",
