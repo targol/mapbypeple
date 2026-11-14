@@ -1,3 +1,5 @@
+import { ShareMenu } from './ShareMenu';
+import { placeUrl } from '../utils/urls';
 import React, { useMemo, useState } from 'react';
 import {
   AlertTriangle,
@@ -82,6 +84,7 @@ export function LocationDetailPanel({
   onSelectStory,
 }: LocationDetailPanelProps) {
   const [copiedLink, setCopiedLink] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const [showNearby, setShowNearby] = useState(false);
   const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
 
@@ -158,7 +161,7 @@ export function LocationDetailPanel({
       .slice(0, 4);
   }, [allPlaces, place]);
 
-  const shareUrl = `${window.location.origin}/place/${place.slug}`;
+  const shareUrl = placeUrl(place.slug);
   const osmUrl = `https://www.openstreetmap.org/?mlat=${place.latitude}&mlon=${place.longitude}#map=18/${place.latitude}/${place.longitude}`;
 
   const handleCopyLink = async () => {
@@ -171,21 +174,7 @@ export function LocationDetailPanel({
     }
   };
 
-  const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: lang === 'fa' ? place.nameFa : place.nameEn || place.nameFa,
-          text: lang === 'fa' ? place.shortIntroFa : place.shortIntroEn || place.shortIntroFa,
-          url: shareUrl,
-        });
-        return;
-      } catch {
-        // Fallback to copy link
-      }
-    }
-    handleCopyLink();
-  };
+  const handleShare = () => setShareOpen(true);
 
   const leadPhoto = recentPhotos[0] || historicalPhotos[0];
 
@@ -618,6 +607,15 @@ export function LocationDetailPanel({
           </div>
         </div>
       </div>
+      {shareOpen && (
+        <ShareMenu
+          lang={lang}
+          title={lang === 'fa' ? place.nameFa : place.nameEn || place.nameFa}
+          text={lang === 'fa' ? place.shortIntroFa : place.shortIntroEn || place.shortIntroFa}
+          url={shareUrl}
+          onClose={() => setShareOpen(false)}
+        />
+      )}
     </aside>
   );
 }

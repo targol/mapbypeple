@@ -5,6 +5,8 @@ import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
   return {
+    // Relative asset paths: the built folder works at the site root, in a sub-folder or on a subdomain.
+    base: './',
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {

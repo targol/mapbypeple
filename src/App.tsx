@@ -35,6 +35,7 @@ import { ContributionModal } from './components/ContributionModal';
 import { AdminDashboard } from './components/AdminDashboard';
 import { WalkGuide } from './components/WalkGuide';
 import { useGeolocation } from './hooks/useGeolocation';
+import { embedUrl as buildEmbedUrl, isAdminLocation, setQueryParam, slugFromLocation } from './utils/urls';
 
 type PublicSection = 'map' | 'stories' | 'people' | 'about' | 'admin';
 
@@ -60,7 +61,7 @@ function BarzokAppContent() {
   }, [pathname]);
 
   const [activeSection, setActiveSection] = useState<PublicSection>(() =>
-    window.location.pathname.startsWith('/admin') ? 'admin' : 'map'
+    isAdminLocation() ? 'admin' : 'map'
   );
 
   const [bundle, setBundle] = useState<PublicMapBundle>({
@@ -102,6 +103,26 @@ function BarzokAppContent() {
   const [walkOpen, setWalkOpen] = useState<boolean>(false);
   const [walkFocusId, setWalkFocusId] = useState<string | null>(null);
 
+  const setAllLayers = (on: boolean) =>
+    setEnabledLayerIds(() => {
+      const next: Record<string, boolean> = {};
+      bundle.layers.forEach((l) => {
+        next[l.id] = on;
+      });
+      return next;
+    });
+
+  const allNoneBar = (
+    <div className="flex items-center gap-2 px-1 pb-1.5 text-xs font-semibold">
+      <button type="button" onClick={() => setAllLayers(true)} className="px-2.5 py-1 rounded-md bg-[#254B36] text-[#F5F2E9]">
+        {lang === 'fa' ? 'روشن کردن همه' : 'Show all'}
+      </button>
+      <button type="button" onClick={() => setAllLayers(false)} className="px-2.5 py-1 rounded-md bg-[#EBE6DF] text-[#1C1917]">
+        {lang === 'fa' ? 'خاموش کردن همه' : 'Hide all'}
+      </button>
+    </div>
+  );
+
   const startRoute = (rt: RouteRecord | null) => {
     setActiveRoute(rt);
     setWalkOpen(Boolean(rt));
@@ -117,14 +138,13 @@ function BarzokAppContent() {
   // Listen to browser back/forward navigation
   useEffect(() => {
     const handlePopState = () => {
-      const nextPath = window.location.pathname;
-      setPathname(nextPath);
-      if (nextPath.startsWith('/admin')) {
+      setPathname(window.location.pathname);
+      if (isAdminLocation()) {
         setActiveSection('admin');
-      } else if (nextPath.startsWith('/place/')) {
-        const slug = decodeURIComponent(nextPath.replace('/place/', ''));
-        const found = bundle.places.find((p) => p.slug === slug);
-        if (found) setSelectedPlace(found);
+      } else {
+        const slug = slugFromLocation();
+        const found = slug ? bundle.places.find((p) => p.slug === slug) : null;
+        setSelectedPlace(found ?? null);
         setActiveSection('map');
       }
     };
@@ -148,10 +168,10 @@ function BarzokAppContent() {
         return next;
       });
 
-      // Check if URL is /place/:slug
-      if (window.location.pathname.startsWith('/place/')) {
-        const slug = decodeURIComponent(window.location.pathname.replace('/place/', ''));
-        const matched = data.places.find((p) => p.slug === slug);
+      // Open the place named in the URL (?place=slug), e.g. from a QR code or a shared link
+      {
+        const slug = slugFromLocation();
+        const matched = slug ? data.places.find((p) => p.slug === slug) : null;
         if (matched) {
           setSelectedPlace(matched);
         }
@@ -171,24 +191,14 @@ function BarzokAppContent() {
   // Select a place and update URL to /place/:slug (unless in /embed mode)
   const handleSelectPlace = (place: PlaceRecord | null) => {
     setSelectedPlace(place);
-    if (!isEmbedMode) {
-      if (place) {
-        window.history.pushState({}, '', `/place/${place.slug}`);
-      } else if (window.location.pathname.startsWith('/place/')) {
-        window.history.pushState({}, '', '/');
-      }
-    }
+    if (!isEmbedMode) setQueryParam('place', place ? place.slug : null);
   };
 
   const navigateToSection = (section: PublicSection) => {
     setActiveSection(section);
-    if (section === 'admin') {
-      window.history.pushState({}, '', '/admin');
-      setPathname('/admin');
-    } else {
-      window.history.pushState({}, '', '/');
-      setPathname('/');
-    }
+    setQueryParam('place', null);
+    setQueryParam('admin', section === 'admin' ? '1' : null, true);
+    setPathname(window.location.pathname);
   };
 
   // Filter places by enabled thematic layers AND search query (including matching people & stories)
@@ -325,6 +335,7 @@ function BarzokAppContent() {
 
             {layerPanelOpen && (
               <div className="p-2.5 max-h-60 overflow-y-auto space-y-1">
+                {allNoneBar}
                 {bundle.layers.map((layer) => {
                   const checked = Boolean(enabledLayerIds[layer.id]);
                   return (
@@ -416,7 +427,7 @@ function BarzokAppContent() {
   }
 
   // `?embed=1` works on any static host (no server rewrite needed, unlike `/embed`).
-  const embedUrl = `${window.location.origin}${import.meta.env.BASE_URL}?embed=1`;
+  const embedUrl = buildEmbedUrl();
   const iframeSnippet = `<iframe src="${embedUrl}" width="100%" height="680" style="border:0; border-radius: 12px; overflow: hidden;" allow="geolocation" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="مردمنگار برزک | Barzok People Map"></iframe>`;
 
   return (
@@ -425,7 +436,7 @@ function BarzokAppContent() {
       <header className="flex items-center justify-between gap-8 px-6 py-3.5 bg-[#F5F2E9] border-b border-[#806B50]/25 shrink-0 z-30">
         {/* Zone 1: Single text element wordmark */}
         <a
-          href="/"
+          href="?"
           onClick={(e) => {
             e.preventDefault();
             navigateToSection('map');
@@ -674,24 +685,18 @@ function BarzokAppContent() {
                     <div className="flex items-center gap-2 text-[11px]">
                       <button
                         type="button"
-                        onClick={() => {
-                          const allOn: Record<string, boolean> = {};
-                          bundle.layers.forEach((l) => {
-                            allOn[l.id] = true;
-                          });
-                          setEnabledLayerIds(allOn);
-                        }}
-                        className="text-[#254B36] hover:underline"
+                        onClick={() => setAllLayers(true)}
+                        className="px-2 py-0.5 rounded bg-[#254B36] text-[#F5F2E9] font-semibold"
                       >
-                        {lang === 'fa' ? 'همه' : 'All'}
+                        {lang === 'fa' ? 'روشن کردن همه' : 'Show all'}
                       </button>
                       <span>·</span>
                       <button
                         type="button"
-                        onClick={() => setEnabledLayerIds({})}
-                        className="text-[#806B50] hover:underline"
+                        onClick={() => setAllLayers(false)}
+                        className="px-2 py-0.5 rounded bg-[#EBE6DF] text-[#1C1917] font-semibold"
                       >
-                        {lang === 'fa' ? 'هیچ‌کدام' : 'None'}
+                        {lang === 'fa' ? 'خاموش کردن همه' : 'Hide all'}
                       </button>
                     </div>
                   </div>
@@ -953,6 +958,7 @@ function BarzokAppContent() {
                   placeholder={lang === 'fa' ? 'جستجو در نقشه...' : 'Search...'}
                   className="w-full px-3 py-2 rounded-lg bg-white border border-[#806B50]/30 text-xs"
                 />
+                {allNoneBar}
                 <div className="grid grid-cols-2 gap-2">
                   {bundle.layers.map((layer) => {
                     const checked = Boolean(enabledLayerIds[layer.id]);

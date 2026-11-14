@@ -441,7 +441,7 @@ export function AdminDashboard({
 
   const activeLayers = adminData?.layers || publicBundle.layers;
   const activePlaces = adminData?.places || publicBundle.places;
-  const embedUrl = `${window.location.origin}${import.meta.env.BASE_URL}?embed=1`;
+  const embedUrl = `${window.location.origin}${window.location.pathname.replace(/[^/]*$/, '')}?embed=1`;
   const iframeSnippet = `<iframe src="${embedUrl}" width="100%" height="680" style="border:0; border-radius: 12px; overflow: hidden;" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="مردمنگار برزک | Barzok People Map"></iframe>`;
 
   return (
