@@ -37,9 +37,20 @@ export interface LayerRecord {
   updatedAt: string;
 }
 
+// Lines (water channels, streets) and areas (gardens, neighbourhoods, hills) drawn on the map.
+// Coordinates are [lat, lng]. A place without `geometry` is a plain pin.
+export interface PlaceGeometry {
+  type: 'LineString' | 'Polygon';
+  coordinates: [number, number][];
+  color?: string;
+  fillOpacity?: number;
+}
+
 export interface PlaceRecord {
   id: string;
   slug: string;
+  /** Optional shape; `latitude`/`longitude` are then a representative point (centroid / middle). */
+  geometry?: PlaceGeometry;
   layerId?: string | null;
   additionalLayerIds: string; // JSON stringified string[]
   nameFa: string;
@@ -150,6 +161,8 @@ export interface RouteRecord {
   verificationStatus: string;
   isDemo: boolean;
   stops: RouteStopRecord[];
+  /** Recorded walking track as [lat, lng] points (from a GPX file). Falls back to straight lines between stops. */
+  track?: [number, number][];
 }
 
 export interface MediaRecord {
@@ -216,9 +229,12 @@ export interface AdminBundle extends PublicMapBundle {
   contributions: ContributionRecord[];
 }
 
-// Official Geographic Center of Barzok, Kashan County, Isfahan Province, Iran
+// Geographic center of Barzok, Kashan County, Isfahan Province, Iran.
+// Verified against two independent sources: Wikipedia (33°47′09″N 51°13′38″E =
+// 33.78583, 51.22722) and a gazetteer listing (≈33.783, 51.225). The earlier value
+// (33.7925, 51.2292) was ~0.7 km north-east of the town.
 export const BARZOK_CENTER = {
-  lat: 33.7925,
-  lng: 51.2292,
+  lat: 33.78583,
+  lng: 51.22722,
   defaultZoom: 15,
 };

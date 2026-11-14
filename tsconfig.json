@@ -24,5 +24,13 @@
     "allowImportingTsExtensions": true,
     "noEmit": true
   },
-  "exclude": ["dist"]
+  "exclude": [
+    "dist",
+    "node_modules",
+    "docs",
+    "server.ts",
+    "src/db",
+    "src/middleware",
+    "src/lib"
+  ]
 }

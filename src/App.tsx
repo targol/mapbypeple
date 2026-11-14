@@ -20,6 +20,7 @@ import {
   X,
 } from 'lucide-react';
 import { AuthProvider } from './context/AuthContext';
+import { apiRequest } from './data/api';
 import {
   Language,
   PlaceRecord,
@@ -32,6 +33,9 @@ import { BarzokMapCanvas } from './components/BarzokMapCanvas';
 import { LocationDetailPanel } from './components/LocationDetailPanel';
 import { ContributionModal } from './components/ContributionModal';
 import { AdminDashboard } from './components/AdminDashboard';
+import { WalkGuide } from './components/WalkGuide';
+import { useGeolocation } from './hooks/useGeolocation';
+import { embedUrl as buildEmbedUrl, isAdminLocation, setQueryParam, slugFromLocation } from './utils/urls';
 
 type PublicSection = 'map' | 'stories' | 'people' | 'about' | 'admin';
 
@@ -45,7 +49,10 @@ function safeParseJson<T>(raw: string | undefined | null, fallback: T): T {
 }
 
 function BarzokAppContent() {
-  const [lang, setLang] = useState<Language>('fa');
+  // `?lang=en` lets an embedding page (WordPress/Elementor) pick the language.
+  const [lang, setLang] = useState<Language>(() =>
+    new URLSearchParams(window.location.search).get('lang') === 'en' ? 'en' : 'fa'
+  );
   const [pathname, setPathname] = useState<string>(window.location.pathname);
 
   const isEmbedMode = useMemo(() => {
@@ -54,7 +61,7 @@ function BarzokAppContent() {
   }, [pathname]);
 
   const [activeSection, setActiveSection] = useState<PublicSection>(() =>
-    window.location.pathname.startsWith('/admin') ? 'admin' : 'map'
+    isAdminLocation() ? 'admin' : 'map'
   );
 
   const [bundle, setBundle] = useState<PublicMapBundle>({
@@ -72,7 +79,7 @@ function BarzokAppContent() {
 
   // Layer visibility state (initialized dynamically from database layers)
   const [enabledLayerIds, setEnabledLayerIds] = useState<Record<string, boolean>>({});
-  const [layerPanelOpen, setLayerPanelOpen] = useState<boolean>(true);
+  const [layerPanelOpen, setLayerPanelOpen] = useState<boolean>(() => window.innerWidth >= 768);
   const [mobileSheetOpen, setMobileSheetOpen] = useState<boolean>(false);
 
   // Search & Map/List View Toggle
@@ -92,6 +99,35 @@ function BarzokAppContent() {
     lng: number;
   } | null>(null);
   const [copiedEmbed, setCopiedEmbed] = useState<boolean>(false);
+  const geo = useGeolocation();
+  const [walkOpen, setWalkOpen] = useState<boolean>(false);
+  const [walkFocusId, setWalkFocusId] = useState<string | null>(null);
+
+  const setAllLayers = (on: boolean) =>
+    setEnabledLayerIds(() => {
+      const next: Record<string, boolean> = {};
+      bundle.layers.forEach((l) => {
+        next[l.id] = on;
+      });
+      return next;
+    });
+
+  const allNoneBar = (
+    <div className="flex items-center gap-2 px-1 pb-1.5 text-xs font-semibold">
+      <button type="button" onClick={() => setAllLayers(true)} className="px-2.5 py-1 rounded-md bg-[#254B36] text-[#F5F2E9]">
+        {lang === 'fa' ? 'روشن کردن همه' : 'Show all'}
+      </button>
+      <button type="button" onClick={() => setAllLayers(false)} className="px-2.5 py-1 rounded-md bg-[#EBE6DF] text-[#1C1917]">
+        {lang === 'fa' ? 'خاموش کردن همه' : 'Hide all'}
+      </button>
+    </div>
+  );
+
+  const startRoute = (rt: RouteRecord | null) => {
+    setActiveRoute(rt);
+    setWalkOpen(Boolean(rt));
+    if (rt) geo.start();
+  };
 
   // Sync HTML dir and lang attributes
   useEffect(() => {
@@ -102,14 +138,13 @@ function BarzokAppContent() {
   // Listen to browser back/forward navigation
   useEffect(() => {
     const handlePopState = () => {
-      const nextPath = window.location.pathname;
-      setPathname(nextPath);
-      if (nextPath.startsWith('/admin')) {
+      setPathname(window.location.pathname);
+      if (isAdminLocation()) {
         setActiveSection('admin');
-      } else if (nextPath.startsWith('/place/')) {
-        const slug = decodeURIComponent(nextPath.replace('/place/', ''));
-        const found = bundle.places.find((p) => p.slug === slug);
-        if (found) setSelectedPlace(found);
+      } else {
+        const slug = slugFromLocation();
+        const found = slug ? bundle.places.find((p) => p.slug === slug) : null;
+        setSelectedPlace(found ?? null);
         setActiveSection('map');
       }
     };
@@ -121,11 +156,7 @@ function BarzokAppContent() {
     setLoading(true);
     setLoadError(null);
     try {
-      const res = await fetch('/api/public/map-bundle');
-      if (!res.ok) {
-        throw new Error('خطا در بارگذاری اطلاعات نقشه از پایگاه داده');
-      }
-      const data: PublicMapBundle = await res.json();
+      const data = await apiRequest<PublicMapBundle>('GET', '/api/public/map-bundle');
       setBundle(data);
 
       // Initialize layer visibility from DB layers
@@ -137,10 +168,10 @@ function BarzokAppContent() {
         return next;
       });
 
-      // Check if URL is /place/:slug
-      if (window.location.pathname.startsWith('/place/')) {
-        const slug = decodeURIComponent(window.location.pathname.replace('/place/', ''));
-        const matched = data.places.find((p) => p.slug === slug);
+      // Open the place named in the URL (?place=slug), e.g. from a QR code or a shared link
+      {
+        const slug = slugFromLocation();
+        const matched = slug ? data.places.find((p) => p.slug === slug) : null;
         if (matched) {
           setSelectedPlace(matched);
         }
@@ -160,24 +191,14 @@ function BarzokAppContent() {
   // Select a place and update URL to /place/:slug (unless in /embed mode)
   const handleSelectPlace = (place: PlaceRecord | null) => {
     setSelectedPlace(place);
-    if (!isEmbedMode) {
-      if (place) {
-        window.history.pushState({}, '', `/place/${place.slug}`);
-      } else if (window.location.pathname.startsWith('/place/')) {
-        window.history.pushState({}, '', '/');
-      }
-    }
+    if (!isEmbedMode) setQueryParam('place', place ? place.slug : null);
   };
 
   const navigateToSection = (section: PublicSection) => {
     setActiveSection(section);
-    if (section === 'admin') {
-      window.history.pushState({}, '', '/admin');
-      setPathname('/admin');
-    } else {
-      window.history.pushState({}, '', '/');
-      setPathname('/');
-    }
+    setQueryParam('place', null);
+    setQueryParam('admin', section === 'admin' ? '1' : null, true);
+    setPathname(window.location.pathname);
   };
 
   // Filter places by enabled thematic layers AND search query (including matching people & stories)
@@ -253,6 +274,25 @@ function BarzokAppContent() {
     [bundle.places]
   );
 
+  const walkGuide =
+    activeRoute && walkOpen ? (
+      <WalkGuide
+        lang={lang}
+        route={activeRoute}
+        allPlaces={bundle.places}
+        position={geo.position}
+        geoStatus={geo.status}
+        onStartGps={geo.start}
+        onFocusPlace={(p) => setWalkFocusId(p.id)}
+        onOpenDetails={(p) => handleSelectPlace(p)}
+        onClose={() => {
+          setWalkFocusId(null);
+          setWalkOpen(false);
+          setActiveRoute(null);
+        }}
+      />
+    ) : null;
+
   // Admin route view
   if (activeSection === 'admin' && !isEmbedMode) {
     return (
@@ -295,6 +335,7 @@ function BarzokAppContent() {
 
             {layerPanelOpen && (
               <div className="p-2.5 max-h-60 overflow-y-auto space-y-1">
+                {allNoneBar}
                 {bundle.layers.map((layer) => {
                   const checked = Boolean(enabledLayerIds[layer.id]);
                   return (
@@ -329,17 +370,39 @@ function BarzokAppContent() {
                 })}
               </div>
             )}
+            {bundle.routes.length > 0 && (
+              <div className="p-2.5 border-t border-[#806B50]/20 space-y-1">
+                {bundle.routes.map((rt) => (
+                  <button
+                    key={rt.id}
+                    type="button"
+                    onClick={() => startRoute(activeRoute?.id === rt.id ? null : rt)}
+                    className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg bg-[#254B36] text-[#F5F2E9] text-xs font-semibold"
+                  >
+                    <RouteIcon className="w-4 h-4 shrink-0" />
+                    <span className="truncate">
+                      {lang === 'fa' ? 'شروع پیاده‌روی: ' : 'Start walk: '}
+                      {lang === 'fa' ? rt.titleFa : rt.titleEn || rt.titleFa}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
-          <div className="flex-1 h-full">
+          <div className="flex-1 h-full relative">
             <BarzokMapCanvas
               lang={lang}
               layers={bundle.layers}
               places={filteredPlaces}
+              allPlaces={bundle.places}
               activeRoute={activeRoute}
-              selectedPlaceId={selectedPlace?.id || null}
+              selectedPlaceId={selectedPlace?.id || walkFocusId}
               onSelectPlace={handleSelectPlace}
+              userPosition={geo.position}
+              onLocateMe={geo.start}
             />
+            {walkGuide}
           </div>
 
           {selectedPlace && (
@@ -363,8 +426,9 @@ function BarzokAppContent() {
     );
   }
 
-  const embedUrl = `${window.location.origin}/embed`;
-  const iframeSnippet = `<iframe src="${embedUrl}" width="100%" height="680" style="border:0; border-radius: 12px; overflow: hidden;" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="مردمنگار برزک | Barzok People Map"></iframe>`;
+  // `?embed=1` works on any static host (no server rewrite needed, unlike `/embed`).
+  const embedUrl = buildEmbedUrl();
+  const iframeSnippet = `<iframe src="${embedUrl}" width="100%" height="680" style="border:0; border-radius: 12px; overflow: hidden;" allow="geolocation" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="مردمنگار برزک | Barzok People Map"></iframe>`;
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F5F2E9] text-[#1C1917]">
@@ -372,7 +436,7 @@ function BarzokAppContent() {
       <header className="flex items-center justify-between gap-8 px-6 py-3.5 bg-[#F5F2E9] border-b border-[#806B50]/25 shrink-0 z-30">
         {/* Zone 1: Single text element wordmark */}
         <a
-          href="/"
+          href="?"
           onClick={(e) => {
             e.preventDefault();
             navigateToSection('map');
@@ -621,24 +685,18 @@ function BarzokAppContent() {
                     <div className="flex items-center gap-2 text-[11px]">
                       <button
                         type="button"
-                        onClick={() => {
-                          const allOn: Record<string, boolean> = {};
-                          bundle.layers.forEach((l) => {
-                            allOn[l.id] = true;
-                          });
-                          setEnabledLayerIds(allOn);
-                        }}
-                        className="text-[#254B36] hover:underline"
+                        onClick={() => setAllLayers(true)}
+                        className="px-2 py-0.5 rounded bg-[#254B36] text-[#F5F2E9] font-semibold"
                       >
-                        {lang === 'fa' ? 'همه' : 'All'}
+                        {lang === 'fa' ? 'روشن کردن همه' : 'Show all'}
                       </button>
                       <span>·</span>
                       <button
                         type="button"
-                        onClick={() => setEnabledLayerIds({})}
-                        className="text-[#806B50] hover:underline"
+                        onClick={() => setAllLayers(false)}
+                        className="px-2 py-0.5 rounded bg-[#EBE6DF] text-[#1C1917] font-semibold"
                       >
-                        {lang === 'fa' ? 'هیچ‌کدام' : 'None'}
+                        {lang === 'fa' ? 'خاموش کردن همه' : 'Hide all'}
                       </button>
                     </div>
                   </div>
@@ -728,7 +786,7 @@ function BarzokAppContent() {
                           <button
                             key={rt.id}
                             type="button"
-                            onClick={() => setActiveRoute(isActive ? null : rt)}
+                            onClick={() => startRoute(isActive ? null : rt)}
                             className={`w-full text-start p-2.5 rounded-lg border text-xs transition-colors ${
                               isActive
                                 ? 'bg-[#254B36] text-[#F5F2E9] border-[#254B36]'
@@ -766,14 +824,17 @@ function BarzokAppContent() {
             )}
 
             {viewMode === 'map' ? (
-              <div className="flex-1 w-full h-full">
+              <div className="flex-1 w-full h-full relative">
                 <BarzokMapCanvas
                   lang={lang}
                   layers={bundle.layers}
                   places={filteredPlaces}
+                  allPlaces={bundle.places}
                   activeRoute={activeRoute}
-                  selectedPlaceId={selectedPlace?.id || null}
+                  selectedPlaceId={selectedPlace?.id || walkFocusId}
                   onSelectPlace={(p) => handleSelectPlace(p)}
+                  userPosition={geo.position}
+                  onLocateMe={geo.start}
                   pickMode={pickingForContribution}
                   pickedCoords={pickedContributionCoords}
                   onPickCoords={(coords) => {
@@ -782,6 +843,7 @@ function BarzokAppContent() {
                     setContributionOpen(true);
                   }}
                 />
+                {walkGuide}
               </div>
             ) : (
               /* List View of Filtered Places */
@@ -896,6 +958,7 @@ function BarzokAppContent() {
                   placeholder={lang === 'fa' ? 'جستجو در نقشه...' : 'Search...'}
                   className="w-full px-3 py-2 rounded-lg bg-white border border-[#806B50]/30 text-xs"
                 />
+                {allNoneBar}
                 <div className="grid grid-cols-2 gap-2">
                   {bundle.layers.map((layer) => {
                     const checked = Boolean(enabledLayerIds[layer.id]);
@@ -1118,7 +1181,7 @@ function BarzokAppContent() {
                 </span>
               </h2>
               <a
-                href="/embed"
+                href="?embed=1"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-xs font-semibold text-[#254B36] underline"
@@ -1129,8 +1192,8 @@ function BarzokAppContent() {
 
             <p className="text-xs text-[#57534E] leading-relaxed">
               {lang === 'fa'
-                ? 'برای قرار دادن نقشه تعاملی برزک در هر برگه وردپرس یا صفحه‌ساز المنتور (Elementor)، یک ویجت HTML اضافه کرده و کد زیر را در آن قرار دهید. هدرهای امنیتی Content-Security-Policy (frame-ancestors *) به گونه‌ای تنظیم شده‌اند که جاسازی در دامنه‌های خارجی وردپرس بدون محدودیت و بدون اسکرول‌بار اضافی کار کند.'
-                : 'Add an HTML widget in WordPress / Elementor and paste the snippet below. The /embed mode hides the site header/footer and fills 100% of the iframe container.'}
+                ? 'برای قرار دادن نقشه تعاملی برزک در هر برگه وردپرس یا صفحه‌ساز المنتور (Elementor)، یک ویجت HTML اضافه کرده و کد زیر را در آن قرار دهید. برای نسخه‌ی انگلیسی به انتهای آدرس «&lang=en» اضافه کنید. پس از انتشار روی میزبان نهایی، اطمینان حاصل کنید که میزبان سرآیند frame-ancestors را مسدود نمی‌کند (راهنما در README).'
+                : 'Add an HTML widget in WordPress / Elementor and paste the snippet below. Append "&lang=en" to the URL for the English UI. The embed mode hides the site header/footer and fills 100% of the iframe. After deploying, make sure your host does not block framing (see README).'}
             </p>
 
             <div className="relative">
@@ -1159,22 +1222,18 @@ function BarzokAppContent() {
           <section className="bg-white p-6 rounded-xl border border-[#806B50]/25 space-y-4">
             <h2 className="text-base font-bold text-[#1C1917]">
               {lang === 'fa'
-                ? 'معماری امنیتی، پایگاه داده و تنظیمات کلیدهای API در محیط عملیاتی'
-                : 'Production API Keys, RLS Security & Architecture Readiness'}
+                ? 'حالت نمونه‌ی اولیه: بدون کلید API، بدون هزینه و بدون سرور'
+                : 'Prototype Mode: No API Keys, No Billing, No Server'}
             </h2>
             <ul className="space-y-2 text-xs text-[#57534E] leading-relaxed list-disc ps-5">
               <li>
-                <strong>پایگاه داده رابطه‌ای (PostgreSQL):</strong> جداول ۱۲گانه شامل{' '}
-                <code className="font-mono-num">
-                  layers, places, people, stories, media, events, activities, routes, route_stops, contributions, place_people, place_stories
-                </code>{' '}
-                با کلیدهای UUID و ایندکس‌های مختصات جغرافیایی و وضعیت انتشار پیاده‌سازی شده‌اند.
+                <strong>نقشه:</strong> Leaflet با تایل‌های OpenStreetMap (و لایه‌ی توپوگرافی OpenTopoMap). نیازی به کلید یا حساب پرداخت نیست؛ درج منبع نقشه در گوشه‌ی نقشه الزامی است و باید حفظ شود.
               </li>
               <li>
-                <strong>سطوح دسترسی (Row-Level Security & API Isolation):</strong> بازدیدکنندگان عمومی فقط به محتوای منتشرشده (<code className="font-mono-num">published</code>) دسترسی دارند؛ مشارکت‌های مردمی بدون انتشار خودکار وارد صف بررسی (<code className="font-mono-num">pending_review</code>) می‌شوند و اطلاعات تماس مشارکت‌کنندگان هرگز در API عمومی بازگردانده نمی‌شود.
+                <strong>داده‌ها:</strong> فایل‌های JSON محلی در <code className="font-mono-num">src/data/seed</code> به‌عنوان داده‌ی اولیه، و ذخیره‌ی تغییرات در <code className="font-mono-num">localStorage</code> مرورگر. ویرایش‌ها فقط در همین مرورگر دیده می‌شوند و بین بازدیدکنندگان به اشتراک گذاشته نمی‌شوند.
               </li>
               <li>
-                <strong>محدودسازی کلید Google Maps در محیط عملیاتی:</strong> در کنسول Google Cloud، کلید <code className="font-mono-num">VITE_GOOGLE_MAPS_API_KEY</code> را به HTTP Referrers دامنه اصلی سایت و دامنه وردپرس محدود کرده و API Restriction را صرفاً روی Maps JavaScript API تنظیم نمایید.
+                <strong>ورود مدیر:</strong> ورود نمایشی بدون احراز هویت واقعی است. پیش از انتشار عمومی با داده‌ی واقعی، باید پایگاه داده و احراز هویت (مثلاً Supabase) جایگزین شود؛ لایه‌ی داده (<code className="font-mono-num">src/data/api.ts</code>) و نقشه (<code className="font-mono-num">BarzokMapCanvas</code>) برای همین جایگزینی ماژولار نوشته شده‌اند.
               </li>
             </ul>
           </section>
@@ -1238,8 +1297,8 @@ function BarzokAppContent() {
             : 'Barzok People Map — Digital Ethnographic & Cultural Heritage Platform'}
         </span>
         <div className="flex items-center gap-4">
-          <a href="/embed" target="_blank" rel="noopener noreferrer" className="hover:text-[#254B36]">
-            {lang === 'fa' ? 'نمای جاسازی (/embed)' : 'Embed View (/embed)'}
+          <a href="?embed=1" target="_blank" rel="noopener noreferrer" className="hover:text-[#254B36]">
+            {lang === 'fa' ? 'نمای جاسازی (embed)' : 'Embed View (embed)'}
           </a>
           <span>·</span>
           <button

@@ -1,0 +1,185 @@
+/* Styles for the Leaflet map. Kept in plain CSS because marker HTML is built as a string. */
+
+.barzok-leaflet.leaflet-container {
+  font-family: inherit;
+  background: #e5e0d5;
+  direction: ltr; /* Leaflet panes assume LTR even when the page is RTL */
+}
+
+.barzok-leaflet.barzok-pick-mode,
+.barzok-leaflet.barzok-pick-mode .leaflet-interactive {
+  cursor: crosshair;
+}
+
+.leaflet-control-attribution {
+  font-size: 10px;
+}
+
+.barzok-divicon {
+  background: transparent;
+  border: 0;
+}
+
+/* Place pin. --s (size in px) is set per zoom level from the component so the ~200 pins stay
+   readable when zoomed out. */
+.barzok-pin {
+  position: relative;
+  width: var(--s, 40px);
+  height: var(--s, 40px);
+  transition: transform 0.15s ease;
+}
+.barzok-pin:hover {
+  transform: scale(1.1);
+}
+.barzok-pin.is-selected {
+  transform: scale(1.2);
+}
+.barzok-pin__dot {
+  width: var(--s, 40px);
+  height: var(--s, 40px);
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #f5f2e9;
+  border: 2px solid #f5f2e9;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  box-sizing: border-box;
+}
+.barzok-pin__dot svg {
+  width: calc(var(--s, 40px) * 0.5);
+  height: calc(var(--s, 40px) * 0.5);
+}
+.barzok-pin.is-selected .barzok-pin__dot {
+  border-color: #d6a83f;
+  box-shadow: 0 0 0 4px rgba(214, 168, 63, 0.5), 0 4px 10px rgba(0, 0, 0, 0.28);
+}
+.barzok-pin__count {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 9999px;
+  background: #d6a83f;
+  color: #1c1917;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #f5f2e9;
+}
+.barzok-pin__label {
+  position: absolute;
+  top: calc(var(--s, 40px) + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 190px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 2px 10px;
+  border-radius: 4px;
+  background: rgba(245, 242, 233, 0.95);
+  border: 1px solid rgba(128, 107, 80, 0.4);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+  font-size: 11px;
+  font-weight: 600;
+  color: #1c1917;
+}
+.barzok-pin.is-selected .barzok-pin__label {
+  background: #fff;
+  box-shadow: 0 0 0 2px #254b36;
+}
+
+/* Picked-coordinate pin (contribution form / admin) */
+.barzok-pickpin {
+  position: relative;
+  width: 36px;
+  height: 36px;
+}
+.barzok-pickpin__dot {
+  width: 36px;
+  height: 36px;
+  border-radius: 9999px;
+  background: #d6a83f;
+  color: #1c1917;
+  border: 2px solid #1c1917;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 18px;
+}
+.barzok-pickpin__label {
+  position: absolute;
+  top: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: #1c1917;
+  color: #f5f2e9;
+  font-size: 10px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/* Numbered walking-route stop */
+.barzok-stop {
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  background: #d6a83f;
+  color: #1c1917;
+  border: 2px solid #1c1917;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* Visitor's live position (guided walk) */
+.barzok-me {
+  position: relative;
+  width: 20px;
+  height: 20px;
+}
+.barzok-me__dot {
+  position: absolute;
+  inset: 3px;
+  border-radius: 9999px;
+  background: #1a73e8;
+  border: 3px solid #fff;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.45);
+}
+.barzok-me__pulse {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: rgba(26, 115, 232, 0.35);
+  animation: barzok-pulse 2s ease-out infinite;
+}
+@keyframes barzok-pulse {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .barzok-me__pulse {
+    animation: none;
+  }
+}
+
+/* Numbered route stop badge (sits at the top-left corner of the place pin) */
+.barzok-stop {
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}

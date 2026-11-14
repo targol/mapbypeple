@@ -1,3 +1,5 @@
+import { ShareMenu } from './ShareMenu';
+import { placeUrl } from '../utils/urls';
 import React, { useMemo, useState } from 'react';
 import {
   AlertTriangle,
@@ -82,6 +84,7 @@ export function LocationDetailPanel({
   onSelectStory,
 }: LocationDetailPanelProps) {
   const [copiedLink, setCopiedLink] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const [showNearby, setShowNearby] = useState(false);
   const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
 
@@ -158,8 +161,8 @@ export function LocationDetailPanel({
       .slice(0, 4);
   }, [allPlaces, place]);
 
-  const shareUrl = `${window.location.origin}/place/${place.slug}`;
-  const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${place.latitude},${place.longitude}`;
+  const shareUrl = placeUrl(place.slug);
+  const osmUrl = `https://www.openstreetmap.org/?mlat=${place.latitude}&mlon=${place.longitude}#map=18/${place.latitude}/${place.longitude}`;
 
   const handleCopyLink = async () => {
     try {
@@ -171,21 +174,7 @@ export function LocationDetailPanel({
     }
   };
 
-  const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: lang === 'fa' ? place.nameFa : place.nameEn || place.nameFa,
-          text: lang === 'fa' ? place.shortIntroFa : place.shortIntroEn || place.shortIntroFa,
-          url: shareUrl,
-        });
-        return;
-      } catch {
-        // Fallback to copy link
-      }
-    }
-    handleCopyLink();
-  };
+  const handleShare = () => setShareOpen(true);
 
   const leadPhoto = recentPhotos[0] || historicalPhotos[0];
 
@@ -300,13 +289,13 @@ export function LocationDetailPanel({
         {/* Primary Action Toolbar */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
           <a
-            href={googleMapsUrl}
+            href={osmUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-[#254B36] text-[#F5F2E9] text-xs font-medium hover:bg-[#1d3b2a] transition-colors whitespace-nowrap"
           >
             <ExternalLink className="w-3.5 h-3.5 shrink-0" />
-            <span>{lang === 'fa' ? 'گوگل مپس' : 'Google Maps'}</span>
+            <span>{lang === 'fa' ? 'مشاهده در OSM' : 'Open in OSM'}</span>
           </a>
 
           <button
@@ -618,6 +607,15 @@ export function LocationDetailPanel({
           </div>
         </div>
       </div>
+      {shareOpen && (
+        <ShareMenu
+          lang={lang}
+          title={lang === 'fa' ? place.nameFa : place.nameEn || place.nameFa}
+          text={lang === 'fa' ? place.shortIntroFa : place.shortIntroEn || place.shortIntroFa}
+          url={shareUrl}
+          onClose={() => setShareOpen(false)}
+        />
+      )}
     </aside>
   );
 }
