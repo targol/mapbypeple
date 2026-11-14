@@ -14,11 +14,25 @@ npm.cmd run build
 `https://barzokhouse.com/map/`
 
 ## ۳. عکس و صدا روی همان هاست
-- عکس‌ها: `public/images/barzok/` (پیش از build) یا مستقیم در `map/images/barzok/` روی هاست.
-- صدا: فایل‌ها را در `map/audio/` بگذارید و در `src/data/audio.json` بنویسید:
-  `{ "lodging-003": [{ "url": "audio/lodging-003.mp3", "titleFa": "قصه این مکان" }] }`
-  بعد دوباره build کنید و آپلود کنید.
-- فرمت پیشنهادی صدا: mp3 یا m4a، حدود ۶۴ تا ۹۶ کیلوبیت‌برثانیه تا حجم کم بماند.
+ساختار روی هاست بعد از آپلود:
+```
+public_html/map/
+  index.html
+  assets/            ← خود برنامه (با هر build عوض می‌شود)
+  audio.json         ← فهرست صداها (بدون build قابل ویرایش)
+  audio/             ← فایل‌های صوتی
+  images/barzok/     ← عکس‌ها
+```
+**صدا (بدون build مجدد):**
+1. فایل صوتی (mp3 یا m4a، حدود ۶۴ تا ۹۶ کیلوبیت‌برثانیه) را با File Manager هاست در `map/audio/` آپلود کنید.
+2. فایل `map/audio.json` روی هاست را ویرایش کنید:
+   `{ "lodging-003": [{ "url": "audio/lodging-003.mp3", "titleFa": "قصه این مکان" }] }`
+   شناسه‌ی هر مکان در `docs/places-index.csv` است.
+3. صفحه را refresh کنید؛ پخش‌کننده در کارت پیاده‌روی و پنل مکان ظاهر می‌شود.
+
+با آپلود دوباره‌ی `dist`، فایل `audio.json` و پوشه‌ی `audio` هاست را دست‌کاری نکنید یا قبل از آپلود نسخه‌ی هاست را نگه دارید.
+
+**عکس:** عکس‌ها را در `map/images/barzok/` بگذارید و آدرسشان را به شکل `images/barzok/نام.jpg` در داده بنویسید (برای عکس‌های My Maps از KMZ استفاده می‌شود).
 
 ## ۴. قرار دادن در وردپرس
 - لینک مستقیم: دکمه یا منو به `https://barzokhouse.com/map/`.
