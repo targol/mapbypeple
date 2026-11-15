@@ -26,6 +26,7 @@ import { BARZOK_CENTER, LayerRecord, PlaceRecord } from '../../types';
 import { LayerIcon } from '../LayerIcon';
 import { distanceMeters } from '../../utils/geo';
 import type { BarzokMapCanvasProps } from './mapTypes';
+import { neighbourhoodPolygons } from '../../utils/neighbourhood';
 
 type TileStyle = 'osm' | 'topo' | 'sat';
 
@@ -282,6 +283,7 @@ export function LeafletMapCanvas({
   onFollowChange,
 }: BarzokMapCanvasProps) {
   const [tileStyle, setTileStyle] = useState<TileStyle>('osm');
+  const [showHoods, setShowHoods] = useState(true);
   const [map, setMap] = useState<L.Map | null>(null);
   const [zoom, setZoom] = useState<number>(BARZOK_CENTER.defaultZoom);
   const [center, setCenter] = useState<{ lat: number; lng: number }>({
@@ -366,6 +368,17 @@ export function LeafletMapCanvas({
     [positionedPlaces, selectedPlaceId, lang, labelsOn, size, activeRoute, routeStopIds, zoom]
   );
 
+  // Neighbourhood outlines + names, drawn even when the neighbourhood layer itself is switched off.
+  const hoodOverlay = useMemo(() => {
+    const visible = new Set(places.map((p) => p.id));
+    return neighbourhoodPolygons(allPlaces ?? places).map((h) => {
+      const ring = h.geometry!.coordinates;
+      const lat = ring.reduce((a, c) => a + c[0], 0) / ring.length;
+      const lng = ring.reduce((a, c) => a + c[1], 0) / ring.length;
+      return { place: h, ring, center: [lat, lng] as [number, number], layerShown: visible.has(h.id) };
+    });
+  }, [allPlaces, places]);
+
   const shapes = useMemo(() => places.filter((p) => p.geometry), [places]);
 
   const routeData = useMemo(() => {
@@ -445,6 +458,31 @@ export function LeafletMapCanvas({
           />
           <PanToSelected target={selectedTarget} />
           <FitRoute routeId={activeRoute?.id ?? null} points={routeData.line} />
+
+          {/* Neighbourhood boundaries and names */}
+          {showHoods &&
+            hoodOverlay.map((h) => (
+              <React.Fragment key={`hood-${h.place.id}`}>
+                {!h.layerShown && (
+                  <Polygon
+                    positions={h.ring}
+                    interactive={false}
+                    pathOptions={{ color: h.place.geometry?.color || '#7A4E9C', weight: 2, dashArray: '8 6', fillOpacity: 0.04 }}
+                  />
+                )}
+                <Marker
+                  position={h.center}
+                  interactive={false}
+                  icon={L.divIcon({
+                    html: `<div class="barzok-hood-label" dir="auto">${escapeHtml(
+                      lang === 'fa' ? h.place.nameFa : h.place.nameEn || h.place.nameFa
+                    )}</div>`,
+                    className: 'barzok-divicon',
+                    iconSize: [0, 0],
+                  })}
+                />
+              </React.Fragment>
+            ))}
 
           {/* Lines and areas (water channels, gardens, neighbourhoods, streets, hills) */}
           {shapes.map((p) => {
@@ -573,6 +611,19 @@ export function LeafletMapCanvas({
             </button>
           ))}
         </div>
+
+        {hoodOverlay.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setShowHoods((v) => !v)}
+            aria-pressed={showHoods}
+            className={`px-3 py-1.5 rounded-lg border border-[#806B50]/35 shadow-md text-[11px] font-semibold w-fit ${
+              showHoods ? 'bg-[#254B36] text-[#F5F2E9]' : 'bg-[#F5F2E9]/95 text-[#1C1917]'
+            }`}
+          >
+            {lang === 'fa' ? 'مرز و نام محله‌ها' : 'Neighbourhoods'}
+          </button>
+        )}
 
         <div className="flex flex-col bg-[#F5F2E9]/95 border border-[#806B50]/35 rounded-lg shadow-md overflow-hidden w-fit">
           <button

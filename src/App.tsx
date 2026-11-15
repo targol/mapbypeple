@@ -34,6 +34,7 @@ import { LocationDetailPanel } from './components/LocationDetailPanel';
 import { ContributionModal } from './components/ContributionModal';
 import { AdminDashboard } from './components/AdminDashboard';
 import { attachHostedMedia } from './utils/hostedMedia';
+import { buildNeighbourhoodIndex, neighbourhoodPolygons } from './utils/neighbourhood';
 import { WalkGuide } from './components/WalkGuide';
 import { useGeolocation } from './hooks/useGeolocation';
 import { embedUrl as buildEmbedUrl, isAdminLocation, setQueryParam, slugFromLocation } from './utils/urls';
@@ -85,6 +86,7 @@ function BarzokAppContent() {
 
   // Search & Map/List View Toggle
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [hoodFilter, setHoodFilter] = useState<string>('');
   const [viewMode, setViewMode] = useState<'map' | 'list'>('map');
 
   // Selected Place, Active Walking Route & Story Modal
@@ -204,6 +206,9 @@ function BarzokAppContent() {
   };
 
   // Filter places by enabled thematic layers AND search query (including matching people & stories)
+  const hoodByPlace = useMemo(() => buildNeighbourhoodIndex(bundle.places), [bundle.places]);
+  const hoodList = useMemo(() => neighbourhoodPolygons(bundle.places), [bundle.places]);
+
   const filteredPlaces = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
 
@@ -249,12 +254,15 @@ function BarzokAppContent() {
         return false;
       }
 
+      if (hoodFilter && hoodByPlace[place.id]?.id !== hoodFilter) return false;
+
       if (!q) return true;
 
       const matchesText =
         place.nameFa.toLowerCase().includes(q) ||
         (place.nameEn && place.nameEn.toLowerCase().includes(q)) ||
         place.category.toLowerCase().includes(q) ||
+        (hoodByPlace[place.id]?.nameFa ?? '').toLowerCase().includes(q) ||
         place.shortIntroFa.toLowerCase().includes(q) ||
         place.fullDescriptionFa.toLowerCase().includes(q) ||
         Boolean(matchedPlaceIdsFromPeopleOrStories[place.id]);
@@ -269,6 +277,8 @@ function BarzokAppContent() {
     bundle.placeStories,
     enabledLayerIds,
     searchQuery,
+    hoodFilter,
+    hoodByPlace,
   ]);
 
   const hasDemoRecords = useMemo(
@@ -423,6 +433,7 @@ function BarzokAppContent() {
               events={bundle.events}
               placePeople={bundle.placePeople}
               placeStories={bundle.placeStories}
+              neighbourhood={hoodByPlace[selectedPlace.id] ?? null}
               onClose={() => handleSelectPlace(null)}
               onSelectPlace={handleSelectPlace}
               onSelectStory={(st) => setSelectedStoryModal(st)}
@@ -649,6 +660,21 @@ function BarzokAppContent() {
                       </button>
                     )}
                   </div>
+                  {hoodList.length > 0 && (
+                    <select
+                      value={hoodFilter}
+                      onChange={(e) => setHoodFilter(e.target.value)}
+                      aria-label={lang === 'fa' ? 'فیلتر محله' : 'Neighbourhood filter'}
+                      className="mt-2 w-full px-2.5 py-2 rounded-lg bg-white border border-[#806B50]/30 text-xs text-[#1C1917]"
+                    >
+                      <option value="">{lang === 'fa' ? 'همه‌ی محله‌ها' : 'All neighbourhoods'}</option>
+                      {hoodList.map((h) => (
+                        <option key={h.id} value={h.id}>
+                          {lang === 'fa' ? h.nameFa : h.nameEn || h.nameFa}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </div>
 
                 {/* Map / List View Segmented Control */}
@@ -1010,6 +1036,7 @@ function BarzokAppContent() {
               events={bundle.events}
               placePeople={bundle.placePeople}
               placeStories={bundle.placeStories}
+              neighbourhood={hoodByPlace[selectedPlace.id] ?? null}
               onClose={() => handleSelectPlace(null)}
               onSelectPlace={(p) => handleSelectPlace(p)}
               onSelectStory={(st) => setSelectedStoryModal(st)}

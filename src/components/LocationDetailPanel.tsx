@@ -42,6 +42,8 @@ interface LocationDetailPanelProps {
   events: EventRecord[];
   placePeople: PlacePersonLink[];
   placeStories: PlaceStoryLink[];
+  /** Neighbourhood whose boundary contains this place, if any. */
+  neighbourhood?: PlaceRecord | null;
   onClose: () => void;
   onSelectPlace: (place: PlaceRecord) => void;
   onSelectStory: (story: StoryRecord) => void;
@@ -80,6 +82,7 @@ export function LocationDetailPanel({
   events,
   placePeople,
   placeStories,
+  neighbourhood = null,
   onClose,
   onSelectPlace,
   onSelectStory,
@@ -194,6 +197,15 @@ export function LocationDetailPanel({
                 : primaryLayer.nameEn || primaryLayer.nameFa
               : place.category}
           </span>
+          {neighbourhood && (
+            <>
+              <span aria-hidden="true">·</span>
+              <span className="font-medium text-[#806B50]">
+                {lang === 'fa' ? 'محله ' : 'Neighbourhood: '}
+                {lang === 'fa' ? neighbourhood.nameFa : neighbourhood.nameEn || neighbourhood.nameFa}
+              </span>
+            </>
+          )}
           {additionalLayers.map((al) => (
             <React.Fragment key={al.id}>
               <span aria-hidden="true">·</span>

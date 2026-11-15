@@ -183,6 +183,14 @@ function setPlacePeople(placeId: string, personIds: string[]) {
   }
 }
 
+function setPlaceEvents(placeId: string, eventIds: string[]) {
+  const db = getDb();
+  for (const ev of db.events) {
+    if (eventIds.includes(ev.id)) ev.placeId = placeId;
+    else if (ev.placeId === placeId) ev.placeId = null;
+  }
+}
+
 function setPlaceStories(placeId: string, storyIds: string[]) {
   const db = getDb();
   const valid = new Set(db.stories.map((s) => s.id));
@@ -541,6 +549,7 @@ function createPlace(b: Body) {
   };
   db.places.push(place);
   setPlacePeople(place.id, Array.isArray(b.personIds) ? b.personIds : []);
+  if (Array.isArray(b.eventIds)) setPlaceEvents(place.id, b.eventIds);
   setPlaceStories(place.id, Array.isArray(b.storyIds) ? b.storyIds : []);
   commit();
   return place;
@@ -550,7 +559,7 @@ function updatePlace(id: string, b: Body) {
   const db = getDb();
   const place = db.places.find((p) => p.id === id);
   if (!place) throw new Error('مکان موردنظر یافت نشد.');
-  const { personIds, storyIds, ...fields } = stripImmutable(b);
+  const { personIds, storyIds, eventIds, ...fields } = stripImmutable(b);
   const payload: Body = { ...fields };
 
   if (payload.latitude !== undefined) payload.latitude = normalizeCoord(payload.latitude, BARZOK_CENTER.lat);
@@ -562,6 +571,7 @@ function updatePlace(id: string, b: Body) {
 
   Object.assign(place, payload, { updatedAt: nowIso() });
   if (Array.isArray(personIds)) setPlacePeople(id, personIds);
+  if (Array.isArray(eventIds)) setPlaceEvents(id, eventIds);
   if (Array.isArray(storyIds)) setPlaceStories(id, storyIds);
   commit();
   return place;

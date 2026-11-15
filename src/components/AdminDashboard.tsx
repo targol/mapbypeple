@@ -107,6 +107,7 @@ export function AdminDashboard({
   const [placeVerStatus, setPlaceVerStatus] = useState<'verified' | 'community' | 'demo'>('verified');
   const [placeSelectedPeople, setPlaceSelectedPeople] = useState<string[]>([]);
   const [placeSelectedStories, setPlaceSelectedStories] = useState<string[]>([]);
+  const [placeSelectedEvents, setPlaceSelectedEvents] = useState<string[]>([]);
 
   // People Form State
   const [editingPersonId, setEditingPersonId] = useState<string | null>(null);
@@ -145,6 +146,88 @@ export function AdminDashboard({
   const [mediaUrl, setMediaUrl] = useState('');
   const [mediaType, setMediaType] = useState('recent_photo');
   const [mediaCaptionFa, setMediaCaptionFa] = useState('');
+
+  // "Add new" must always work, even right after editing something: these clear a whole form.
+  const resetLayerForm = () => {
+    setEditingLayerId(null);
+    setLayerNameFa('');
+    setLayerNameEn('');
+    setLayerDescFa('');
+    setLayerIcon('landmark');
+    setLayerColor('#254B36');
+    setLayerActive(true);
+  };
+  const resetPlaceForm = () => {
+    setEditingPlaceId(null);
+    setPlaceNameFa('');
+    setPlaceNameEn('');
+    setPlaceLayerId(publicBundle.layers[0]?.id || '');
+    setPlaceLat(BARZOK_CENTER.lat);
+    setPlaceLng(BARZOK_CENTER.lng);
+    setPlaceShortIntroFa('');
+    setPlaceFullDescFa('');
+    setPlaceHistoricalInfoFa('');
+    setPlaceCurrentStatusFa('');
+    setPlacePhotoUrl('');
+    setPlacePhotoCaption('');
+    setPlaceAudioUrl('');
+    setPlaceVideoUrl('');
+    setPlaceSourceRef('');
+    setPlacePubStatus('published');
+    setPlaceVerStatus('verified');
+    setPlaceSelectedPeople([]);
+    setPlaceSelectedStories([]);
+    setPlaceSelectedEvents([]);
+  };
+  const resetPersonForm = () => {
+    setEditingPersonId(null);
+    setPersonNameFa('');
+    setPersonOccupationFa('');
+    setPersonBioFa('');
+    setPersonEra('');
+  };
+  const resetStoryForm = () => {
+    setEditingStoryId(null);
+    setStoryTitleFa('');
+    setStorySummaryFa('');
+    setStoryContentFa('');
+    setStoryNarrator('');
+  };
+  const resetEventForm = () => {
+    setEditingEventId(null);
+    setEventTitleFa('');
+    setEventSeasonFa('');
+    setEventDescFa('');
+    setEventPlaceId('');
+  };
+  const resetRouteForm = () => {
+    setEditingRouteId(null);
+    setRouteTitleFa('');
+    setRouteDescFa('');
+    setRouteDuration(60);
+    setRouteDistance(1.5);
+    setRouteDifficulty('easy');
+    setRouteColor('#D6A83F');
+    setRouteStopPlaceIds([]);
+  };
+  const resetMediaForm = () => {
+    setEditingMediaId(null);
+    setMediaTitleFa('');
+    setMediaUrl('');
+    setMediaCaptionFa('');
+  };
+  const addNewButton = (label: string, reset: () => void) => (
+    <button
+      type="button"
+      onClick={() => {
+        reset();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }}
+      className="px-3 py-1.5 rounded-lg bg-[#254B36] text-[#F5F2E9] text-xs font-semibold hover:bg-[#1d3b2a] whitespace-nowrap"
+    >
+      ＋ {label}
+    </button>
+  );
 
   const fetchAdminData = useCallback(async () => {
     if (!user) return;
@@ -321,6 +404,7 @@ export function AdminDashboard({
         isDemo: placeVerStatus === 'demo',
         personIds: placeSelectedPeople,
         storyIds: placeSelectedStories,
+        eventIds: placeSelectedEvents,
       };
 
       if (editingPlaceId) {
@@ -337,19 +421,7 @@ export function AdminDashboard({
         setStatusMessage({ type: 'success', text: 'مکان جدید روی نقشه برزک ثبت شد.' });
       }
 
-      setEditingPlaceId(null);
-      setPlaceNameFa('');
-      setPlaceNameEn('');
-      setPlaceShortIntroFa('');
-      setPlaceFullDescFa('');
-      setPlaceHistoricalInfoFa('');
-      setPlaceCurrentStatusFa('');
-      setPlacePhotoUrl('');
-      setPlacePhotoCaption('');
-      setPlaceAudioUrl('');
-      setPlaceVideoUrl('');
-      setPlaceSelectedPeople([]);
-      setPlaceSelectedStories([]);
+      resetPlaceForm();
       await fetchAdminData();
       await onRefreshPublic();
     } catch (err: any) {
@@ -413,6 +485,7 @@ export function AdminDashboard({
     const allPS = adminData?.placeStories || publicBundle.placeStories || [];
     setPlaceSelectedPeople(allPP.filter((rel) => rel.placeId === p.id).map((rel) => rel.personId));
     setPlaceSelectedStories(allPS.filter((rel) => rel.placeId === p.id).map((rel) => rel.storyId));
+    setPlaceSelectedEvents((adminData?.events || publicBundle.events || []).filter((ev) => ev.placeId === p.id).map((ev) => ev.id));
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -748,20 +821,7 @@ export function AdminDashboard({
                         : 'Create Layer'}
                     </span>
                   </button>
-                  {editingLayerId && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditingLayerId(null);
-                        setLayerNameFa('');
-                        setLayerNameEn('');
-                        setLayerDescFa('');
-                      }}
-                      className="px-3 py-2 rounded-lg bg-[#EBE6DF] text-xs"
-                    >
-                      {lang === 'fa' ? 'انصراف' : 'Cancel'}
-                    </button>
-                  )}
+                  {addNewButton('افزودن لایه‌ی جدید', resetLayerForm)}
                 </div>
               </form>
 
@@ -890,37 +950,6 @@ export function AdminDashboard({
                       : 'Add New Location to Barzok Map'}
                   </h2>
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setPlaceNameFa('آسیاب آبی تاریخی محله مصلی');
-                      setPlaceNameEn('Historic Watermill of Mosalla Neighborhood');
-                      if (activeLayers[0]) {
-                        setPlaceLayerId(activeLayers[0].id);
-                        setPlaceCategory(activeLayers[0].nameFa);
-                      }
-                      setPlaceLat(33.7932);
-                      setPlaceLng(51.2284);
-                      setPlaceShortIntroFa(
-                        'یکی از آسیاب‌های آبی قدیمی برزک در مسیر جریان آب قنات و جویبار کوهستانی.'
-                      );
-                      setPlaceFullDescFa(
-                        'این آسیاب آبی در گذشته برای آرد کردن گندم و غلات اهالی برزک با نیروی آب قنات کاربرد داشته و بخشی از میراث مهندسی آب و معماری بومی شهر برزک به شمار می‌رود.'
-                      );
-                      setPlaceHistoricalInfoFa('دوره قاجار — بازسازی‌شده در دهه‌های اخیر');
-                      setPlaceCurrentStatusFa('پابرجا و قابل بازدید در مسیر پیاده‌روی محله');
-                      setPlacePhotoUrl(
-                        '/src/assets/images/barzok_historic_architecture_1794421049133.jpg'
-                      );
-                      setPlacePhotoCaption('نمای بافت تاریخی و مسیر آسیاب');
-                      setPlaceSourceRef('پژوهش میدانی مردمنگار برزک');
-                    }}
-                    className="px-3 py-1.5 rounded-lg bg-[#D6A83F]/25 hover:bg-[#D6A83F]/40 text-[#1C1917] text-xs font-semibold transition-colors"
-                  >
-                    {lang === 'fa'
-                      ? '✨ پر کردن خودکار با یک نمونه آماده (جهت تست سریع)'
-                      : '✨ Auto-fill Sample Location'}
-                  </button>
                 </div>
 
                 {/* Inline Helper Box answering "این مقادیر رو از کجا بیارم؟" */}
@@ -996,56 +1025,8 @@ export function AdminDashboard({
                 <div className="p-3.5 rounded-lg bg-[#EBE6DF]/60 border border-[#806B50]/20 space-y-2.5">
                   <div className="text-xs font-semibold text-[#254B36]">
                     {lang === 'fa'
-                      ? 'مختصات جغرافیایی (روش ۱: کلیک روی نقشه روبه‌رو | روش ۲: انتخاب محله آماده | روش ۳: کپی از گوگل مپس)'
-                      : 'Coordinates (Click map, pick a preset, or paste from Google Maps)'}
-                  </div>
-
-                  {/* Preset Neighborhood Buttons */}
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    {[
-                      { label: 'مرکز بافت تاریخی', lat: 33.7925, lng: 51.2292 },
-                      { label: 'محله باغستان و جویبار', lat: 33.7898, lng: 51.2335 },
-                      { label: 'محله کارگاه‌های گلاب‌گیری', lat: 33.7941, lng: 51.2318 },
-                      { label: 'محله نساجی سنتی', lat: 33.7912, lng: 51.2271 },
-                    ].map((preset) => (
-                      <button
-                        key={preset.label}
-                        type="button"
-                        onClick={() => {
-                          setPlaceLat(preset.lat);
-                          setPlaceLng(preset.lng);
-                        }}
-                        className="px-2.5 py-1 rounded bg-white hover:bg-[#254B36] hover:text-white border border-[#806B50]/30 text-[11px] transition-colors"
-                      >
-                        📍 {preset.label}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Paste Directly from Google Maps Right-Click */}
-                  <div>
-                    <input
-                      type="text"
-                      value={googleMapsCoordsPaste}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setGoogleMapsCoordsPaste(val);
-                        const normalized = val
-                          .replace(/[۰-۹]/g, (d) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d)))
-                          .replace(/[٠-٩]/g, (d) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)));
-                        const parts = normalized.split(/[,،\s]+/).filter(Boolean);
-                        if (parts.length >= 2) {
-                          const pLat = parseFloat(parts[0]);
-                          const pLng = parseFloat(parts[1]);
-                          if (!Number.isNaN(pLat) && !Number.isNaN(pLng)) {
-                            setPlaceLat(pLat);
-                            setPlaceLng(pLng);
-                          }
-                        }
-                      }}
-                      placeholder="جایگذاری مستقیم از گوگل مپس (مثلاً: 33.7925, 51.2292)"
-                      className="w-full px-3 py-1.5 rounded bg-white border border-[#806B50]/30 text-xs font-mono-num"
-                    />
+                      ? 'مختصات جغرافیایی (عرض و طول، مثلاً ۳۳٫۷۸۲۹ و ۵۱٫۲۲۹۲)'
+                      : 'Coordinates (latitude and longitude)'}
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
@@ -1292,6 +1273,34 @@ export function AdminDashboard({
                       ))}
                     </div>
                   </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold mb-1">
+                      {lang === 'fa' ? 'رویدادها و آیین‌های مرتبط با این مکان' : 'Connected Events'}
+                    </label>
+                    <div className="max-h-28 overflow-y-auto p-2 rounded border border-[#806B50]/30 space-y-1 bg-[#F5F2E9]/50">
+                      {(adminData?.events || publicBundle.events || []).length === 0 && (
+                        <div className="text-[11px] text-[#806B50]">اول در تب «رویدادها» یک رویداد بسازید.</div>
+                      )}
+                      {(adminData?.events || publicBundle.events || []).map((ev) => (
+                        <label key={ev.id} className="flex items-center gap-2 text-xs">
+                          <input
+                            type="checkbox"
+                            checked={placeSelectedEvents.includes(ev.id)}
+                            onChange={(e) =>
+                              setPlaceSelectedEvents((prev) =>
+                                e.target.checked ? [...prev, ev.id] : prev.filter((id) => id !== ev.id)
+                              )
+                            }
+                          />
+                          <span className="truncate">{ev.titleFa}</span>
+                          {ev.placeId && ev.placeId !== editingPlaceId && (
+                            <span className="text-[10px] text-[#806B50] shrink-0">(به مکان دیگری وصل است)</span>
+                          )}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-3 gap-3">
@@ -1354,37 +1363,11 @@ export function AdminDashboard({
                       ? 'ثبت مکان در نقشه'
                       : 'Create Location'}
                   </button>
-                  {editingPlaceId && (
-                    <button
-                      type="button"
-                      onClick={() => setEditingPlaceId(null)}
-                      className="px-3 py-2 rounded-lg bg-[#EBE6DF] text-xs"
-                    >
-                      {lang === 'fa' ? 'انصراف' : 'Cancel'}
-                    </button>
-                  )}
+                  {addNewButton('افزودن مکان جدید', resetPlaceForm)}
                 </div>
               </form>
 
               <div className="lg:col-span-6 space-y-5">
-                {/* Interactive Coordinate Picker Map */}
-                <div className="h-72 rounded-xl overflow-hidden border border-[#806B50]/30 shadow-sm">
-                  <BarzokMapCanvas
-                    lang={lang}
-                    layers={activeLayers}
-                    places={activePlaces}
-                    activeRoute={null}
-                    selectedPlaceId={editingPlaceId}
-                    onSelectPlace={(p) => handleEditPlaceClick(p)}
-                    pickMode={true}
-                    pickedCoords={{ lat: placeLat, lng: placeLng }}
-                    onPickCoords={(coords) => {
-                      setPlaceLat(coords.lat);
-                      setPlaceLng(coords.lng);
-                    }}
-                  />
-                </div>
-
                 {/* Places List */}
                 <div className="space-y-2.5">
                   <h3 className="text-sm font-bold text-[#1C1917]">
@@ -1502,21 +1485,7 @@ export function AdminDashboard({
                       ? 'ثبت چهره محلی یا پیشه‌ور سنتی'
                       : 'Add Local Person / Artisan'}
                   </h2>
-                  {editingPersonId && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditingPersonId(null);
-                        setPersonNameFa('');
-                        setPersonOccupationFa('');
-                        setPersonBioFa('');
-                        setPersonEra('');
-                      }}
-                      className="text-xs text-[#806B50] hover:underline"
-                    >
-                      انصراف از ویرایش
-                    </button>
-                  )}
+                  {addNewButton('افزودن فرد جدید', resetPersonForm)}
                 </div>
                 <div>
                   <label className="block text-xs font-semibold mb-1">نام و نام خانوادگی *</label>
@@ -1675,21 +1644,7 @@ export function AdminDashboard({
                       ? 'ثبت داستان، خاطره یا تاریخ شفاهی'
                       : 'Add Oral History / Story'}
                   </h2>
-                  {editingStoryId && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditingStoryId(null);
-                        setStoryTitleFa('');
-                        setStorySummaryFa('');
-                        setStoryContentFa('');
-                        setStoryNarrator('');
-                      }}
-                      className="text-xs text-[#806B50] hover:underline"
-                    >
-                      انصراف از ویرایش
-                    </button>
-                  )}
+                  {addNewButton('افزودن داستان جدید', resetStoryForm)}
                 </div>
                 <div>
                   <label className="block text-xs font-semibold mb-1">عنوان داستان *</label>
@@ -1840,21 +1795,7 @@ export function AdminDashboard({
                   <h2 className="text-base font-bold">
                     {editingEventId ? 'ویرایش رویداد یا آیین فصلی' : 'ثبت رویداد یا آیین فصلی'}
                   </h2>
-                  {editingEventId && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditingEventId(null);
-                        setEventTitleFa('');
-                        setEventSeasonFa('');
-                        setEventDescFa('');
-                        setEventPlaceId('');
-                      }}
-                      className="text-xs text-[#806B50] hover:underline"
-                    >
-                      انصراف از ویرایش
-                    </button>
-                  )}
+                  {addNewButton('افزودن رویداد جدید', resetEventForm)}
                 </div>
                 <div>
                   <label className="block text-xs font-semibold mb-1">عنوان رویداد *</label>
@@ -2017,24 +1958,7 @@ export function AdminDashboard({
                       ? 'ویرایش مسیر داستانی و پیاده‌روی'
                       : 'ایجاد مسیر داستانی و پیاده‌روی'}
                   </h2>
-                  {editingRouteId && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditingRouteId(null);
-                        setRouteTitleFa('');
-                        setRouteDescFa('');
-                        setRouteDuration(60);
-                        setRouteDistance(1.5);
-                        setRouteDifficulty('easy');
-                        setRouteColor('#D6A83F');
-                        setRouteStopPlaceIds([]);
-                      }}
-                      className="text-xs text-[#806B50] hover:underline"
-                    >
-                      انصراف از ویرایش
-                    </button>
-                  )}
+                  {addNewButton('افزودن مسیر جدید', resetRouteForm)}
                 </div>
                 <div>
                   <label className="block text-xs font-semibold mb-1">عنوان مسیر *</label>
@@ -2260,20 +2184,7 @@ export function AdminDashboard({
                       ? 'ویرایش عکس یا سند آرشیوی'
                       : 'افزودن عکس یا سند به آرشیو رسانه'}
                   </h2>
-                  {editingMediaId && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditingMediaId(null);
-                        setMediaTitleFa('');
-                        setMediaUrl('');
-                        setMediaCaptionFa('');
-                      }}
-                      className="text-xs text-[#806B50] hover:underline"
-                    >
-                      انصراف از ویرایش
-                    </button>
-                  )}
+                  {addNewButton('افزودن رسانه‌ی جدید', resetMediaForm)}
                 </div>
                 <div>
                   <label className="block text-xs font-semibold mb-1">عنوان رسانه *</label>

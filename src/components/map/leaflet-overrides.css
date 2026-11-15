@@ -187,3 +187,14 @@
 /* Places that are not part of the active route fade back so the route reads at a glance. */
 .barzok-pin.is-dim { opacity: 0.35; }
 .barzok-pin.is-dim:hover { opacity: 1; }
+
+/* Neighbourhood names, centred on their area */
+.barzok-hood-label {
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 700;
+  color: #4a2f63;
+  text-shadow: 0 0 3px #fff, 0 0 3px #fff, 0 0 5px #fff;
+  pointer-events: none;
+}
