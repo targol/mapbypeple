@@ -1,3 +1,4 @@
+import { videoEmbedUrl } from '../utils/hostedMedia';
 import { ShareMenu } from './ShareMenu';
 import { placeUrl } from '../utils/urls';
 import React, { useMemo, useState } from 'react';
@@ -437,21 +438,42 @@ export function LocationDetailPanel({
                 <audio controls src={aud.url} className="w-full h-8" />
               </div>
             ))}
-            {videoLinks.map((vid, i) => (
-              <a
-                key={i}
-                href={vid.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-between p-3 rounded-lg bg-[#EBE6DF] hover:bg-[#D6CEBE] transition-colors text-xs font-medium text-[#1C1917]"
-              >
-                <span className="flex items-center gap-2">
-                  <Video className="w-4 h-4 text-[#254B36]" />
-                  {lang === 'fa' ? vid.titleFa : vid.titleEn || vid.titleFa}
-                </span>
-                <ExternalLink className="w-3.5 h-3.5 text-[#806B50]" />
-              </a>
-            ))}
+            {videoLinks.map((vid, i) => {
+              const embed = videoEmbedUrl(vid.url);
+              const title = lang === 'fa' ? vid.titleFa : vid.titleEn || vid.titleFa;
+              return embed ? (
+                <div key={i} className="space-y-1.5">
+                  <div className="aspect-video rounded-lg overflow-hidden bg-black">
+                    <iframe
+                      src={embed}
+                      title={title}
+                      className="w-full h-full"
+                      loading="lazy"
+                      allow="fullscreen; picture-in-picture"
+                      allowFullScreen
+                    />
+                  </div>
+                  <div className="text-[11px] text-[#57534E] flex items-center gap-1.5">
+                    <Video className="w-3.5 h-3.5 text-[#254B36]" />
+                    {title}
+                  </div>
+                </div>
+              ) : (
+                <a
+                  key={i}
+                  href={vid.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between p-3 rounded-lg bg-[#EBE6DF] hover:bg-[#D6CEBE] transition-colors text-xs font-medium text-[#1C1917]"
+                >
+                  <span className="flex items-center gap-2">
+                    <Video className="w-4 h-4 text-[#254B36]" />
+                    {title}
+                  </span>
+                  <ExternalLink className="w-3.5 h-3.5 text-[#806B50]" />
+                </a>
+              );
+            })}
           </div>
         )}
 

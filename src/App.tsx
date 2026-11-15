@@ -33,6 +33,7 @@ import { BarzokMapCanvas } from './components/BarzokMapCanvas';
 import { LocationDetailPanel } from './components/LocationDetailPanel';
 import { ContributionModal } from './components/ContributionModal';
 import { AdminDashboard } from './components/AdminDashboard';
+import { attachHostedMedia } from './utils/hostedMedia';
 import { WalkGuide } from './components/WalkGuide';
 import { useGeolocation } from './hooks/useGeolocation';
 import { embedUrl as buildEmbedUrl, isAdminLocation, setQueryParam, slugFromLocation } from './utils/urls';
@@ -45,27 +46,6 @@ function safeParseJson<T>(raw: string | undefined | null, fallback: T): T {
     return JSON.parse(raw) as T;
   } catch {
     return fallback;
-  }
-}
-
-type AudioManifest = Record<string, { url: string; titleFa: string; titleEn?: string; duration?: string }[]>;
-
-// audio.json sits next to index.html on the host, so audio can be added by editing that one file
-// (no rebuild). It is merged into the places by id; a missing or broken file is simply ignored.
-async function attachHostedAudio(data: PublicMapBundle) {
-  try {
-    const res = await fetch(`audio.json?t=${Date.now()}`, { cache: 'no-store' });
-    if (!res.ok) return;
-    const manifest = (await res.json()) as AudioManifest;
-    for (const place of data.places) {
-      const extra = manifest[place.id];
-      if (!Array.isArray(extra) || extra.length === 0) continue;
-      const have = safeParseJson<{ url: string }[]>(place.audioRecordings, []);
-      const fresh = extra.filter((a) => !have.some((h) => h.url === a.url));
-      if (fresh.length) place.audioRecordings = JSON.stringify([...have, ...fresh]);
-    }
-  } catch {
-    // no manifest on this host
   }
 }
 
@@ -178,7 +158,7 @@ function BarzokAppContent() {
     setLoadError(null);
     try {
       const data = await apiRequest<PublicMapBundle>('GET', '/api/public/map-bundle');
-      await attachHostedAudio(data);
+      await attachHostedMedia(data.places);
       setBundle(data);
 
       // Initialize layer visibility from DB layers

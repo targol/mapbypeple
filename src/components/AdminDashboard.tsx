@@ -1,3 +1,4 @@
+import { PlaceMediaManager } from './PlaceMediaManager';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   AlertCircle,
@@ -47,6 +48,7 @@ type AdminTab =
   | 'events'
   | 'routes'
   | 'media'
+  | 'wpmedia'
   | 'moderation'
   | 'embed';
 
@@ -565,6 +567,7 @@ export function AdminDashboard({
               { id: 'stories', labelFa: 'داستان‌ها و خاطرات', labelEn: 'Stories', icon: BookOpen },
               { id: 'events', labelFa: 'رویدادها و آیین‌ها', labelEn: 'Events', icon: Calendar },
               { id: 'routes', labelFa: 'مسیرهای پیاده‌روی', labelEn: 'Routes', icon: RouteIcon },
+              { id: 'wpmedia', labelFa: 'رسانه‌ی مکان‌ها (وردپرس)', labelEn: 'Place media (WordPress)', icon: ImageIcon },
               { id: 'media', labelFa: 'رسانه و عکس‌ها', labelEn: 'Media', icon: ImageIcon },
               {
                 id: 'moderation',
@@ -2219,6 +2222,8 @@ export function AdminDashboard({
           )}
 
           {/* TAB C5: MEDIA ARCHIVE */}
+          {activeTab === 'wpmedia' && <PlaceMediaManager lang={lang} places={publicBundle.places} />}
+
           {activeTab === 'media' && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
               <form
