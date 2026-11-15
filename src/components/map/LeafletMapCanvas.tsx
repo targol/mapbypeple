@@ -27,7 +27,7 @@ import { LayerIcon } from '../LayerIcon';
 import { distanceMeters } from '../../utils/geo';
 import type { BarzokMapCanvasProps } from './mapTypes';
 
-type TileStyle = 'osm' | 'topo';
+type TileStyle = 'osm' | 'topo' | 'sat';
 
 // Free, keyless tile sources. Both are built on OpenStreetMap data and require attribution.
 // OSM's public tile servers are fine for a prototype; for a busy public site use a hosted
@@ -41,6 +41,14 @@ const TILE_SOURCES: Record<
     attribution:
       '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors',
     maxNativeZoom: 19,
+  },
+  // Satellite photos (Esri World Imagery): free without a key for light use, attribution required.
+  // Zoomed past the last real tile level, Leaflet simply enlarges the tiles instead of showing grey.
+  sat: {
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    attribution:
+      'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community',
+    maxNativeZoom: 18,
   },
   topo: {
     url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
@@ -548,6 +556,7 @@ export function LeafletMapCanvas({
           <LayersIcon className="w-3.5 h-3.5 text-[#254B36] mx-1 hidden sm:inline" />
           {[
             { id: 'osm' as TileStyle, labelFa: 'نقشه خیابان‌ها', labelEn: 'Map' },
+            { id: 'sat' as TileStyle, labelFa: 'ماهواره', labelEn: 'Satellite' },
             { id: 'topo' as TileStyle, labelFa: 'توپوگرافی', labelEn: 'Terrain' },
           ].map((mode) => (
             <button

@@ -303,7 +303,8 @@ export function AdminDashboard({
         layerId: placeLayerId || null,
         nameFa: placeNameFa,
         nameEn: placeNameEn || null,
-        category: placeCategory,
+        // the thematic category is simply the layer's name (one concept, not two)
+        category: publicBundle.layers.find((l) => l.id === placeLayerId)?.nameFa ?? placeCategory,
         shortIntroFa: placeShortIntroFa || placeNameFa,
         fullDescriptionFa: placeFullDescFa || placeShortIntroFa || placeNameFa,
         latitude: Number(placeLat),
@@ -989,17 +990,6 @@ export function AdminDashboard({
                       ))}
                     </select>
                   </div>
-                  <div>
-                    <label className="block text-xs font-semibold mb-1">
-                      {lang === 'fa' ? 'دسته‌بندی موضوعی (اختیاری)' : 'Category'}
-                    </label>
-                    <input
-                      type="text"
-                      value={placeCategory}
-                      onChange={(e) => setPlaceCategory(e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg border border-[#806B50]/30 text-sm"
-                    />
-                  </div>
                 </div>
 
                 {/* Click-on-Map & Preset Coordinate Picker */}
@@ -1412,7 +1402,7 @@ export function AdminDashboard({
                           {p.nameFa}
                         </div>
                         <div className="text-xs text-[#57534E] flex items-center gap-2 mt-0.5">
-                          <span>{p.category}</span>
+                          <span>{publicBundle.layers.find((l) => l.id === p.layerId)?.nameFa ?? p.category}</span>
                           <span aria-hidden="true">·</span>
                           <span className="font-mono-num">
                             {p.latitude.toFixed(4)}, {p.longitude.toFixed(4)}
