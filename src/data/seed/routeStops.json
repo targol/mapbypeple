@@ -196,5 +196,752 @@
     "noteFa": null,
     "noteEn": null,
     "audioUrl": null
+  },
+  {
+    "id": "route-house-to-upper-gardens-stop-1",
+    "routeId": "route-house-to-upper-gardens",
+    "placeId": "bakeries-005",
+    "stopOrder": 1,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-to-upper-gardens-stop-2",
+    "routeId": "route-house-to-upper-gardens",
+    "placeId": "gardens-066",
+    "stopOrder": 2,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-to-upper-gardens-stop-3",
+    "routeId": "route-house-to-upper-gardens",
+    "placeId": "religious-020",
+    "stopOrder": 3,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-to-upper-gardens-stop-4",
+    "routeId": "route-house-to-upper-gardens",
+    "placeId": "religious-024",
+    "stopOrder": 4,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-to-upper-gardens-stop-5",
+    "routeId": "route-house-to-upper-gardens",
+    "placeId": "water-009",
+    "stopOrder": 5,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-to-upper-gardens-stop-6",
+    "routeId": "route-house-to-upper-gardens",
+    "placeId": "public-places-014",
+    "stopOrder": 6,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-to-upper-gardens-stop-7",
+    "routeId": "route-house-to-upper-gardens",
+    "placeId": "water-022",
+    "stopOrder": 7,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-to-upper-gardens-stop-8",
+    "routeId": "route-house-to-upper-gardens",
+    "placeId": "religious-021",
+    "stopOrder": 8,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-to-upper-gardens-stop-9",
+    "routeId": "route-house-to-upper-gardens",
+    "placeId": "bakeries-009",
+    "stopOrder": 9,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-to-upper-gardens-stop-10",
+    "routeId": "route-house-to-upper-gardens",
+    "placeId": "public-places-031",
+    "stopOrder": 10,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-to-upper-gardens-stop-11",
+    "routeId": "route-house-to-upper-gardens",
+    "placeId": "water-021",
+    "stopOrder": 11,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-to-upper-gardens-stop-12",
+    "routeId": "route-house-to-upper-gardens",
+    "placeId": "religious-023",
+    "stopOrder": 12,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-to-upper-gardens-stop-13",
+    "routeId": "route-house-to-upper-gardens",
+    "placeId": "public-places-019",
+    "stopOrder": 13,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-to-upper-gardens-stop-14",
+    "routeId": "route-house-to-upper-gardens",
+    "placeId": "water-018",
+    "stopOrder": 14,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-to-upper-gardens-stop-15",
+    "routeId": "route-house-to-upper-gardens",
+    "placeId": "water-035",
+    "stopOrder": 15,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-to-upper-gardens-stop-16",
+    "routeId": "route-house-to-upper-gardens",
+    "placeId": "public-places-009",
+    "stopOrder": 16,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-to-upper-gardens-stop-17",
+    "routeId": "route-house-to-upper-gardens",
+    "placeId": "bakeries-003",
+    "stopOrder": 17,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-to-upper-gardens-stop-18",
+    "routeId": "route-house-to-upper-gardens",
+    "placeId": "water-013",
+    "stopOrder": 18,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-to-upper-gardens-stop-19",
+    "routeId": "route-house-to-upper-gardens",
+    "placeId": "water-008",
+    "stopOrder": 19,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-to-upper-gardens-stop-20",
+    "routeId": "route-house-to-upper-gardens",
+    "placeId": "water-028",
+    "stopOrder": 20,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-to-upper-gardens-stop-21",
+    "routeId": "route-house-to-upper-gardens",
+    "placeId": "bakeries-013",
+    "stopOrder": 21,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-to-upper-gardens-stop-22",
+    "routeId": "route-house-to-upper-gardens",
+    "placeId": "water-038",
+    "stopOrder": 22,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-to-upper-gardens-stop-23",
+    "routeId": "route-house-to-upper-gardens",
+    "placeId": "bakeries-014",
+    "stopOrder": 23,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-to-upper-gardens-stop-24",
+    "routeId": "route-house-to-upper-gardens",
+    "placeId": "neighbourhoods-006",
+    "stopOrder": 24,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-to-castle-hill-stop-1",
+    "routeId": "route-house-to-castle-hill",
+    "placeId": "lodging-003",
+    "stopOrder": 1,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-to-castle-hill-stop-2",
+    "routeId": "route-house-to-castle-hill",
+    "placeId": "bakeries-010",
+    "stopOrder": 2,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-to-castle-hill-stop-3",
+    "routeId": "route-house-to-castle-hill",
+    "placeId": "gardens-064",
+    "stopOrder": 3,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-to-castle-hill-stop-4",
+    "routeId": "route-house-to-castle-hill",
+    "placeId": "water-014",
+    "stopOrder": 4,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-to-castle-hill-stop-5",
+    "routeId": "route-house-to-castle-hill",
+    "placeId": "water-011",
+    "stopOrder": 5,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-to-castle-hill-stop-6",
+    "routeId": "route-house-to-castle-hill",
+    "placeId": "religious-002",
+    "stopOrder": 6,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-to-castle-hill-stop-7",
+    "routeId": "route-house-to-castle-hill",
+    "placeId": "religious-022",
+    "stopOrder": 7,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-to-castle-hill-stop-8",
+    "routeId": "route-house-to-castle-hill",
+    "placeId": "water-029",
+    "stopOrder": 8,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-to-castle-hill-stop-9",
+    "routeId": "route-house-to-castle-hill",
+    "placeId": "public-places-026",
+    "stopOrder": 9,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-to-castle-hill-stop-10",
+    "routeId": "route-house-to-castle-hill",
+    "placeId": "public-places-048",
+    "stopOrder": 10,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-to-castle-hill-stop-11",
+    "routeId": "route-house-to-castle-hill",
+    "placeId": "public-places-001",
+    "stopOrder": 11,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-to-castle-hill-stop-12",
+    "routeId": "route-house-to-castle-hill",
+    "placeId": "water-027",
+    "stopOrder": 12,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-to-castle-hill-stop-13",
+    "routeId": "route-house-to-castle-hill",
+    "placeId": "religious-013",
+    "stopOrder": 13,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-to-castle-hill-stop-14",
+    "routeId": "route-house-to-castle-hill",
+    "placeId": "water-010",
+    "stopOrder": 14,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-to-castle-hill-stop-15",
+    "routeId": "route-house-to-castle-hill",
+    "placeId": "public-places-008",
+    "stopOrder": 15,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-to-castle-hill-stop-16",
+    "routeId": "route-house-to-castle-hill",
+    "placeId": "water-033",
+    "stopOrder": 16,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-to-castle-hill-stop-17",
+    "routeId": "route-house-to-castle-hill",
+    "placeId": "lodging-002",
+    "stopOrder": 17,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-to-castle-hill-stop-18",
+    "routeId": "route-house-to-castle-hill",
+    "placeId": "public-places-004",
+    "stopOrder": 18,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-to-castle-hill-stop-19",
+    "routeId": "route-house-to-castle-hill",
+    "placeId": "lodging-004",
+    "stopOrder": 19,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-to-castle-hill-stop-20",
+    "routeId": "route-house-to-castle-hill",
+    "placeId": "public-places-057",
+    "stopOrder": 20,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-to-castle-hill-stop-21",
+    "routeId": "route-house-to-castle-hill",
+    "placeId": "lodging-006",
+    "stopOrder": 21,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-to-castle-hill-stop-22",
+    "routeId": "route-house-to-castle-hill",
+    "placeId": "mountains-031",
+    "stopOrder": 22,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-to-castle-hill-stop-23",
+    "routeId": "route-house-to-castle-hill",
+    "placeId": "mountains-013",
+    "stopOrder": 23,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-museum-lane-to-house-stop-1",
+    "routeId": "route-museum-lane-to-house",
+    "placeId": "bakeries-012",
+    "stopOrder": 1,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-museum-lane-to-house-stop-2",
+    "routeId": "route-museum-lane-to-house",
+    "placeId": "public-places-013",
+    "stopOrder": 2,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-museum-lane-to-house-stop-3",
+    "routeId": "route-museum-lane-to-house",
+    "placeId": "gardens-050",
+    "stopOrder": 3,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-museum-lane-to-house-stop-4",
+    "routeId": "route-museum-lane-to-house",
+    "placeId": "lodging-003",
+    "stopOrder": 4,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-museum-lane-to-house-stop-5",
+    "routeId": "route-museum-lane-to-house",
+    "placeId": "bakeries-010",
+    "stopOrder": 5,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-to-abazar-bakery-stop-1",
+    "routeId": "route-house-to-abazar-bakery",
+    "placeId": "public-places-048",
+    "stopOrder": 1,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-to-abazar-bakery-stop-2",
+    "routeId": "route-house-to-abazar-bakery",
+    "placeId": "religious-022",
+    "stopOrder": 2,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-to-abazar-bakery-stop-3",
+    "routeId": "route-house-to-abazar-bakery",
+    "placeId": "religious-002",
+    "stopOrder": 3,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-to-abazar-bakery-stop-4",
+    "routeId": "route-house-to-abazar-bakery",
+    "placeId": "water-014",
+    "stopOrder": 4,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-to-abazar-bakery-stop-5",
+    "routeId": "route-house-to-abazar-bakery",
+    "placeId": "water-011",
+    "stopOrder": 5,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-to-abazar-bakery-stop-6",
+    "routeId": "route-house-to-abazar-bakery",
+    "placeId": "public-places-047",
+    "stopOrder": 6,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-to-abazar-bakery-stop-7",
+    "routeId": "route-house-to-abazar-bakery",
+    "placeId": "gardens-066",
+    "stopOrder": 7,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-to-abazar-bakery-stop-8",
+    "routeId": "route-house-to-abazar-bakery",
+    "placeId": "religious-020",
+    "stopOrder": 8,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-barzok-extra-stop-1",
+    "routeId": "route-house-barzok-extra",
+    "placeId": "public-places-013",
+    "stopOrder": 1,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-barzok-extra-stop-2",
+    "routeId": "route-house-barzok-extra",
+    "placeId": "bakeries-012",
+    "stopOrder": 2,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-barzok-extra-stop-3",
+    "routeId": "route-house-barzok-extra",
+    "placeId": "public-places-006",
+    "stopOrder": 3,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-barzok-extra-stop-4",
+    "routeId": "route-house-barzok-extra",
+    "placeId": "public-places-010",
+    "stopOrder": 4,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-barzok-extra-stop-5",
+    "routeId": "route-house-barzok-extra",
+    "placeId": "religious-003",
+    "stopOrder": 5,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-barzok-extra-stop-6",
+    "routeId": "route-house-barzok-extra",
+    "placeId": "bakeries-004",
+    "stopOrder": 6,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-barzok-extra-stop-7",
+    "routeId": "route-house-barzok-extra",
+    "placeId": "lodging-005",
+    "stopOrder": 7,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-barzok-extra-stop-8",
+    "routeId": "route-house-barzok-extra",
+    "placeId": "public-places-002",
+    "stopOrder": 8,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-barzok-extra-stop-9",
+    "routeId": "route-house-barzok-extra",
+    "placeId": "gardens-085",
+    "stopOrder": 9,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-barzok-extra-stop-10",
+    "routeId": "route-house-barzok-extra",
+    "placeId": "gardens-054",
+    "stopOrder": 10,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-barzok-extra-stop-11",
+    "routeId": "route-house-barzok-extra",
+    "placeId": "gardens-053",
+    "stopOrder": 11,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-barzok-extra-stop-12",
+    "routeId": "route-house-barzok-extra",
+    "placeId": "religious-012",
+    "stopOrder": 12,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-barzok-extra-stop-13",
+    "routeId": "route-house-barzok-extra",
+    "placeId": "gardens-031",
+    "stopOrder": 13,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-barzok-extra-stop-14",
+    "routeId": "route-house-barzok-extra",
+    "placeId": "gardens-052",
+    "stopOrder": 14,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-barzok-extra-stop-15",
+    "routeId": "route-house-barzok-extra",
+    "placeId": "public-places-034",
+    "stopOrder": 15,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-barzok-extra-stop-16",
+    "routeId": "route-house-barzok-extra",
+    "placeId": "gardens-051",
+    "stopOrder": 16,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-barzok-extra-stop-17",
+    "routeId": "route-house-barzok-extra",
+    "placeId": "water-011",
+    "stopOrder": 17,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-barzok-extra-stop-18",
+    "routeId": "route-house-barzok-extra",
+    "placeId": "water-014",
+    "stopOrder": 18,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-barzok-extra-stop-19",
+    "routeId": "route-house-barzok-extra",
+    "placeId": "lodging-003",
+    "stopOrder": 19,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-barzok-extra-stop-20",
+    "routeId": "route-house-barzok-extra",
+    "placeId": "public-places-026",
+    "stopOrder": 20,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-barzok-extra-stop-21",
+    "routeId": "route-house-barzok-extra",
+    "placeId": "water-029",
+    "stopOrder": 21,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-barzok-extra-stop-22",
+    "routeId": "route-house-barzok-extra",
+    "placeId": "gardens-064",
+    "stopOrder": 22,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
+  },
+  {
+    "id": "route-house-barzok-extra-stop-23",
+    "routeId": "route-house-barzok-extra",
+    "placeId": "bakeries-010",
+    "stopOrder": 23,
+    "noteFa": null,
+    "noteEn": null,
+    "audioUrl": null
   }
 ]
