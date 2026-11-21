@@ -34,7 +34,7 @@ import { LocationDetailPanel } from './components/LocationDetailPanel';
 import { ContributionModal } from './components/ContributionModal';
 import { AdminDashboard } from './components/AdminDashboard';
 import { attachHostedMedia } from './utils/hostedMedia';
-import { buildNeighbourhoodIndex, neighbourhoodPolygons } from './utils/neighbourhood';
+import { buildNeighbourhoodIndex, NEIGHBOURHOOD_LAYER_ID } from './utils/neighbourhood';
 import { WalkGuide } from './components/WalkGuide';
 import { useGeolocation } from './hooks/useGeolocation';
 import { embedUrl as buildEmbedUrl, isAdminLocation, setQueryParam, slugFromLocation } from './utils/urls';
@@ -207,7 +207,7 @@ function BarzokAppContent() {
 
   // Filter places by enabled thematic layers AND search query (including matching people & stories)
   const hoodByPlace = useMemo(() => buildNeighbourhoodIndex(bundle.places), [bundle.places]);
-  const hoodList = useMemo(() => neighbourhoodPolygons(bundle.places), [bundle.places]);
+  const hoodList = useMemo(() => bundle.places.filter((p) => p.layerId === NEIGHBOURHOOD_LAYER_ID), [bundle.places]);
 
   const filteredPlaces = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();

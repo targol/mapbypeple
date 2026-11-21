@@ -25,9 +25,15 @@ export function neighbourhoodPolygons(places: PlaceRecord[]): PlaceRecord[] {
 export function buildNeighbourhoodIndex(places: PlaceRecord[]): Record<string, PlaceRecord> {
   const hoods = neighbourhoodPolygons(places);
   const index: Record<string, PlaceRecord> = {};
-  if (hoods.length === 0) return index;
+  const byId = new Map(places.filter((p) => p.layerId === NEIGHBOURHOOD_LAYER_ID).map((p) => [p.id, p]));
   for (const place of places) {
-    if (place.layerId === NEIGHBOURHOOD_LAYER_ID || place.geometry) continue;
+    if (place.layerId === NEIGHBOURHOOD_LAYER_ID) continue;
+    const manual = place.neighbourhoodId ? byId.get(place.neighbourhoodId) : undefined;
+    if (manual) {
+      index[place.id] = manual;
+      continue;
+    }
+    if (place.geometry) continue;
     const hood = hoods.find((h) => pointInRing(place.latitude, place.longitude, h.geometry!.coordinates));
     if (hood) index[place.id] = hood;
   }

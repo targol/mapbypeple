@@ -2,14 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { AudioLines, Download, Film, Image as ImageIcon, Plus, Save, Search, Trash2, X } from 'lucide-react';
 import type { AudioItem, Language, PhotoItem, PlaceRecord, VideoItem } from '../types';
 import { fetchHostedJson, MediaManifest, PlaceMedia } from '../utils/hostedMedia';
-
-interface WpMediaItem {
-  id: number;
-  source_url: string;
-  mime_type: string;
-  title?: { rendered?: string };
-  media_details?: { sizes?: Record<string, { source_url: string }> };
-}
+import { WordPressPicker } from './WordPressPicker';
 
 const stripHtml = (s: string) => s.replace(/<[^>]*>/g, '').replace(/&amp;/g, '&').trim();
 const guessKind = (url: string): 'photo' | 'audio' | 'other' =>
@@ -31,161 +24,6 @@ const store = {
     }
   },
 };
-
-/** Modal that lists the WordPress media library (public REST API) and returns the chosen files. */
-function WordPressPicker({
-  kind,
-  wpBase,
-  onPick,
-  onClose,
-}: {
-  kind: 'image' | 'audio';
-  wpBase: string;
-  onPick: (items: WpMediaItem[]) => void;
-  onClose: () => void;
-}) {
-  const [items, setItems] = useState<WpMediaItem[]>([]);
-  const [query, setQuery] = useState('');
-  const [page, setPage] = useState(1);
-  const [more, setMore] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [chosen, setChosen] = useState<WpMediaItem[]>([]);
-
-  const load = async (p: number, q: string, replace: boolean) => {
-    setLoading(true);
-    setError('');
-    try {
-      const url = `${wpBase.replace(/\/$/, '')}/wp-json/wp/v2/media?media_type=${kind}&per_page=30&page=${p}&orderby=date&order=desc&search=${encodeURIComponent(
-        q
-      )}&_fields=id,source_url,mime_type,title,media_details`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = (await res.json()) as WpMediaItem[];
-      setItems((prev) => (replace ? data : [...prev, ...data]));
-      setMore(data.length === 30);
-    } catch (e) {
-      setError(
-        `کتابخانه‌ی وردپرس خوانده نشد (${(e as Error).message}). آدرس سایت را بررسی کنید یا آدرس فایل را دستی بنویسید.`
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    load(1, '', true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const toggle = (it: WpMediaItem) =>
-    setChosen((c) => (c.some((x) => x.id === it.id) ? c.filter((x) => x.id !== it.id) : [...c, it]));
-
-  return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-3" onClick={onClose}>
-      <div
-        className="w-full max-w-3xl max-h-[90vh] flex flex-col bg-[#F5F2E9] rounded-xl shadow-2xl"
-        dir="rtl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between gap-3 p-3 border-b border-[#806B50]/20">
-          <h3 className="text-sm font-bold">{kind === 'image' ? 'انتخاب عکس از کتابخانه‌ی وردپرس' : 'انتخاب فایل صوتی از کتابخانه‌ی وردپرس'}</h3>
-          <button type="button" onClick={onClose} className="p-1 rounded hover:bg-[#EBE6DF]">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-        <form
-          className="flex gap-2 p-3"
-          onSubmit={(e) => {
-            e.preventDefault();
-            setPage(1);
-            load(1, query, true);
-          }}
-        >
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="جستجو در نام فایل..."
-            className="flex-1 px-3 py-2 rounded-lg border border-[#806B50]/30 bg-white text-xs"
-          />
-          <button className="px-3 py-2 rounded-lg bg-[#254B36] text-[#F5F2E9] text-xs font-semibold flex items-center gap-1">
-            <Search className="w-3.5 h-3.5" />
-            جستجو
-          </button>
-        </form>
-        {error && <div className="mx-3 mb-2 p-3 rounded-lg bg-[#D6A83F]/25 text-xs">{error}</div>}
-        <div className="flex-1 overflow-y-auto p-3 pt-0">
-          {kind === 'image' ? (
-            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-              {items.map((it) => {
-                const sel = chosen.some((x) => x.id === it.id);
-                const thumb = it.media_details?.sizes?.medium?.source_url || it.media_details?.sizes?.thumbnail?.source_url || it.source_url;
-                return (
-                  <button
-                    key={it.id}
-                    type="button"
-                    onClick={() => toggle(it)}
-                    className={`relative aspect-square rounded-lg overflow-hidden border-2 ${sel ? 'border-[#254B36]' : 'border-transparent'}`}
-                    title={stripHtml(it.title?.rendered || '')}
-                  >
-                    <img src={thumb} alt="" loading="lazy" className="w-full h-full object-cover" />
-                    {sel && (
-                      <span className="absolute top-1 left-1 w-5 h-5 rounded-full bg-[#254B36] text-white text-[11px] flex items-center justify-center">
-                        {chosen.findIndex((x) => x.id === it.id) + 1}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          ) : (
-            <ul className="space-y-1.5">
-              {items.map((it) => {
-                const sel = chosen.some((x) => x.id === it.id);
-                return (
-                  <li key={it.id} className={`p-2 rounded-lg border ${sel ? 'border-[#254B36] bg-white' : 'border-[#806B50]/20 bg-white/60'}`}>
-                    <button type="button" onClick={() => toggle(it)} className="w-full text-start text-xs font-medium mb-1">
-                      {sel ? '✓ ' : ''}
-                      {stripHtml(it.title?.rendered || it.source_url)}
-                    </button>
-                    <audio controls preload="none" src={it.source_url} className="w-full h-8" />
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-          {loading && <div className="text-xs text-[#806B50] p-3">در حال بارگذاری…</div>}
-          {!loading && !error && items.length === 0 && (
-            <div className="text-xs text-[#806B50] p-3">فایلی پیدا نشد. اول در وردپرس (رسانه ← افزودن) آپلود کنید.</div>
-          )}
-          {more && !loading && (
-            <button
-              type="button"
-              onClick={() => {
-                setPage(page + 1);
-                load(page + 1, query, false);
-              }}
-              className="mt-3 w-full py-2 rounded-lg bg-[#EBE6DF] text-xs font-semibold"
-            >
-              نمایش بیشتر
-            </button>
-          )}
-        </div>
-        <div className="p-3 border-t border-[#806B50]/20 flex items-center justify-between">
-          <span className="text-xs text-[#57534E]">{chosen.length} فایل انتخاب شده</span>
-          <button
-            type="button"
-            disabled={chosen.length === 0}
-            onClick={() => onPick(chosen)}
-            className="px-4 py-2 rounded-lg bg-[#254B36] text-[#F5F2E9] text-xs font-semibold disabled:opacity-40"
-          >
-            افزودن به این مکان
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export function PlaceMediaManager({ lang, places }: { lang: Language; places: PlaceRecord[] }) {
   const [media, setMedia] = useState<MediaManifest>({});
@@ -279,10 +117,10 @@ export function PlaceMediaManager({ lang, places }: { lang: Language; places: Pl
   const save = async () => {
     setStatus(null);
     try {
-      const res = await fetch('save-media.php', {
+      const res = await fetch('save-data.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password, media }),
+        body: JSON.stringify({ password, target: 'media', media }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.ok) throw new Error(data.error || `HTTP ${res.status}`);
@@ -331,7 +169,7 @@ export function PlaceMediaManager({ lang, places }: { lang: Language; places: Pl
             />
           </label>
           <label className="space-y-1">
-            <span className="block text-[11px] text-[#806B50]">رمز ذخیره (همان که در save-media.php گذاشتید)</span>
+            <span className="block text-[11px] text-[#806B50]">رمز ذخیره (همان که در save-data.php گذاشتید)</span>
             <input type="password" dir="ltr" value={password} onChange={(e) => setPassword(e.target.value)} className={`${inp} w-full`} />
           </label>
         </div>

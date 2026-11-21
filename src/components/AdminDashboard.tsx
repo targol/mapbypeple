@@ -32,6 +32,12 @@ import {
 } from '../types';
 import { AVAILABLE_LAYER_ICONS, LayerIcon } from './LayerIcon';
 import { BarzokMapCanvas } from './BarzokMapCanvas';
+import { PublishBar } from './PublishBar';
+import { WordPressPicker } from './WordPressPicker';
+import { ShapeEditor, ShapeKind, LatLng, centroidOf } from './ShapeEditor';
+import { NEIGHBOURHOOD_LAYER_ID } from '../utils/neighbourhood';
+
+const stripTags = (t: string) => t.replace(/<[^>]*>/g, '').trim();
 
 interface AdminDashboardProps {
   lang: Language;
@@ -108,6 +114,18 @@ export function AdminDashboard({
   const [placeSelectedPeople, setPlaceSelectedPeople] = useState<string[]>([]);
   const [placeSelectedStories, setPlaceSelectedStories] = useState<string[]>([]);
   const [placeSelectedEvents, setPlaceSelectedEvents] = useState<string[]>([]);
+  const [placeHoodId, setPlaceHoodId] = useState('');
+  const [placeShape, setPlaceShape] = useState<ShapeKind>('point');
+  const [placeGeo, setPlaceGeo] = useState<LatLng[]>([]);
+  const [placeShapeColor, setPlaceShapeColor] = useState('');
+  const [wpPicker, setWpPicker] = useState<null | 'image' | 'audio'>(null);
+  const wpBase = (() => {
+    try {
+      return window.localStorage.getItem('barzok:wpBase') || window.location.origin;
+    } catch {
+      return window.location.origin;
+    }
+  })();
 
   // People Form State
   const [editingPersonId, setEditingPersonId] = useState<string | null>(null);
@@ -178,6 +196,10 @@ export function AdminDashboard({
     setPlaceSelectedPeople([]);
     setPlaceSelectedStories([]);
     setPlaceSelectedEvents([]);
+    setPlaceHoodId('');
+    setPlaceShape('point');
+    setPlaceGeo([]);
+    setPlaceShapeColor('');
   };
   const resetPersonForm = () => {
     setEditingPersonId(null);
@@ -372,9 +394,35 @@ export function AdminDashboard({
     e.preventDefault();
     setStatusMessage(null);
     try {
-      const recentPhotos = placePhotoUrl
-        ? [{ url: placePhotoUrl, captionFa: placePhotoCaption || placeNameFa, year: placeDocDate }]
-        : [];
+      const existing = editingPlaceId ? publicBundle.places.find((x) => x.id === editingPlaceId) : null;
+      const oldPhotos: any[] = !existing
+        ? []
+        : typeof existing.recentPhotos === 'string'
+          ? JSON.parse(existing.recentPhotos)
+          : existing.recentPhotos || [];
+      const firstPhoto = { url: placePhotoUrl, captionFa: placePhotoCaption || placeNameFa, year: placeDocDate };
+      // replace only the first photo; keep the rest of the album untouched
+      const recentPhotos = placePhotoUrl ? [firstPhoto, ...oldPhotos.slice(1)] : oldPhotos.slice(1);
+
+      const minPts = placeShape === 'polygon' ? 3 : 2;
+      if (placeShape !== 'point' && placeGeo.length < minPts) {
+        setStatusMessage({
+          type: 'error',
+          text: placeShape === 'polygon' ? 'برای محدوده حداقل ۳ نقطه روی نقشه بزنید.' : 'برای مسیر حداقل ۲ نقطه روی نقشه بزنید.',
+        });
+        return;
+      }
+      const shapeColor = placeShapeColor || publicBundle.layers.find((l) => l.id === placeLayerId)?.color || '#254B36';
+      const centre = placeShape === 'point' ? null : centroidOf(placeShape, placeGeo);
+      const geometry =
+        placeShape === 'point'
+          ? null
+          : {
+              type: placeShape === 'polygon' ? ('Polygon' as const) : ('LineString' as const),
+              coordinates: placeGeo,
+              color: shapeColor,
+              ...(placeShape === 'polygon' ? { fillOpacity: 0.25 } : {}),
+            };
       const audioRecordings = placeAudioUrl
         ? [{ url: placeAudioUrl, titleFa: `روایت صوتی ${placeNameFa}` }]
         : [];
@@ -390,11 +438,13 @@ export function AdminDashboard({
         category: publicBundle.layers.find((l) => l.id === placeLayerId)?.nameFa ?? placeCategory,
         shortIntroFa: placeShortIntroFa || placeNameFa,
         fullDescriptionFa: placeFullDescFa || placeShortIntroFa || placeNameFa,
-        latitude: Number(placeLat),
-        longitude: Number(placeLng),
+        latitude: centre ? centre[0] : Number(placeLat),
+        longitude: centre ? centre[1] : Number(placeLng),
+        geometry,
+        neighbourhoodId: placeHoodId || null,
         historicalInfoFa: placeHistoricalInfoFa || null,
         currentStatusFa: placeCurrentStatusFa || null,
-        recentPhotos: placePhotoUrl ? recentPhotos : undefined,
+        recentPhotos,
         audioRecordings: placeAudioUrl ? audioRecordings : undefined,
         videoLinks: placeVideoUrl ? videoLinks : undefined,
         sourceReference: placeSourceRef || null,
@@ -445,6 +495,16 @@ export function AdminDashboard({
     setPlaceDocDate(p.documentationDate || '');
     setPlacePubStatus(p.publicationStatus === 'draft' ? 'draft' : 'published');
     setPlaceVerStatus(p.verificationStatus);
+    setPlaceHoodId(p.neighbourhoodId || '');
+    if (p.geometry && p.geometry.coordinates?.length) {
+      setPlaceShape(p.geometry.type === 'Polygon' ? 'polygon' : 'line');
+      setPlaceGeo(p.geometry.coordinates as LatLng[]);
+      setPlaceShapeColor(p.geometry.color || '');
+    } else {
+      setPlaceShape('point');
+      setPlaceGeo([]);
+      setPlaceShapeColor('');
+    }
 
     // Populate media fields if present on the place record
     try {
@@ -632,6 +692,7 @@ export function AdminDashboard({
       ) : (
         /* Authenticated CMS Workspace */
         <div className="flex-1 max-w-[1400px] w-full mx-auto px-6 py-6 space-y-6">
+          {DATA_SOURCE === 'local' && <PublishBar />}
           {/* Navigation Tabs */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-2 border-b border-[#806B50]/20">
             {[
@@ -1021,40 +1082,80 @@ export function AdminDashboard({
                   </div>
                 </div>
 
-                {/* Click-on-Map & Preset Coordinate Picker */}
+                {/* Shape: point / line / area */}
                 <div className="p-3.5 rounded-lg bg-[#EBE6DF]/60 border border-[#806B50]/20 space-y-2.5">
-                  <div className="text-xs font-semibold text-[#254B36]">
-                    {lang === 'fa'
-                      ? 'مختصات جغرافیایی (عرض و طول، مثلاً ۳۳٫۷۸۲۹ و ۵۱٫۲۲۹۲)'
-                      : 'Coordinates (latitude and longitude)'}
+                  <div className="text-xs font-semibold text-[#254B36]">نوع و موقعیت روی نقشه</div>
+                  <div className="flex gap-1.5 flex-wrap" role="radiogroup" aria-label="نوع شکل">
+                    {([
+                      ['point', '📍 نقطه'],
+                      ['line', '〰️ مسیر / خط (قنات، کوچه)'],
+                      ['polygon', '⬠ محدوده (محله، باغ)'],
+                    ] as [ShapeKind, string][]).map(([k, label]) => (
+                      <button
+                        key={k}
+                        type="button"
+                        role="radio"
+                        aria-checked={placeShape === k}
+                        onClick={() => setPlaceShape(k)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold border ${
+                          placeShape === k ? 'bg-[#254B36] text-[#F5F2E9] border-[#254B36]' : 'bg-white border-[#806B50]/30'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
                   </div>
+                  {placeShape === 'point' ? (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[11px] text-[#57534E] mb-1">عرض جغرافیایی (Latitude)</label>
+                        <input type="number" step="any" value={placeLat} onChange={(e) => setPlaceLat(Number(e.target.value))} className="w-full px-3 py-1.5 rounded bg-white border border-[#806B50]/30 text-xs font-mono-num" />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] text-[#57534E] mb-1">طول جغرافیایی (Longitude)</label>
+                        <input type="number" step="any" value={placeLng} onChange={(e) => setPlaceLng(Number(e.target.value))} className="w-full px-3 py-1.5 rounded bg-white border border-[#806B50]/30 text-xs font-mono-num" />
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <label className="flex items-center gap-2 text-[11px] text-[#57534E]">
+                        رنگ
+                        <input
+                          type="color"
+                          value={placeShapeColor || publicBundle.layers.find((l) => l.id === placeLayerId)?.color || '#254B36'}
+                          onChange={(e) => setPlaceShapeColor(e.target.value)}
+                          className="w-8 h-6 p-0 border-0 bg-transparent"
+                        />
+                      </label>
+                      <ShapeEditor
+                        kind={placeShape}
+                        points={placeGeo}
+                        onChange={setPlaceGeo}
+                        color={placeShapeColor || publicBundle.layers.find((l) => l.id === placeLayerId)?.color || '#254B36'}
+                        places={publicBundle.places}
+                        editingId={editingPlaceId}
+                        focus={[placeLat, placeLng]}
+                      />
+                    </>
+                  )}
+                </div>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-[11px] text-[#57534E] mb-1">
-                        عرض جغرافیایی (Latitude)
-                      </label>
-                      <input
-                        type="number"
-                        step="any"
-                        value={placeLat}
-                        onChange={(e) => setPlaceLat(Number(e.target.value))}
-                        className="w-full px-3 py-1.5 rounded bg-white border border-[#806B50]/30 text-xs font-mono-num"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[11px] text-[#57534E] mb-1">
-                        طول جغرافیایی (Longitude)
-                      </label>
-                      <input
-                        type="number"
-                        step="any"
-                        value={placeLng}
-                        onChange={(e) => setPlaceLng(Number(e.target.value))}
-                        className="w-full px-3 py-1.5 rounded bg-white border border-[#806B50]/30 text-xs font-mono-num"
-                      />
-                    </div>
-                  </div>
+                <div>
+                  <label className="block text-xs font-semibold mb-1">محله</label>
+                  <select
+                    value={placeHoodId}
+                    onChange={(e) => setPlaceHoodId(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg border border-[#806B50]/30 text-sm bg-white"
+                  >
+                    <option value="">خودکار (از روی مرز محله‌ها)</option>
+                    {publicBundle.places
+                      .filter((x) => x.layerId === NEIGHBOURHOOD_LAYER_ID && x.id !== editingPlaceId)
+                      .map((h) => (
+                        <option key={h.id} value={h.id}>
+                          {h.nameFa}
+                        </option>
+                      ))}
+                  </select>
                 </div>
 
                 <div>
@@ -1110,115 +1211,70 @@ export function AdminDashboard({
                   </div>
                 </div>
 
-                {/* Image Picker: Upload from Computer OR Pick Built-in Gallery OR Paste URL */}
+                {/* Photo: from the WordPress media library only */}
                 <div className="p-3.5 rounded-lg bg-[#EBE6DF]/50 border border-[#806B50]/20 space-y-2.5">
-                  <label className="block text-xs font-semibold text-[#1C1917]">
-                    {lang === 'fa'
-                      ? 'تصویر مکان (اختیاری — آپلود از دستگاه، انتخاب تصویر آماده یا وارد کردن لینک)'
-                      : 'Location Photograph (Optional — Upload file, pick preset, or enter URL)'}
-                  </label>
-
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <label className="px-3 py-1.5 rounded-lg bg-[#254B36] text-[#F5F2E9] text-xs font-medium cursor-pointer hover:bg-[#1d3b2a] transition-colors">
-                      <span>📁 آپلود عکس از کامپیوتر / موبایل</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (!file) return;
-                          const reader = new FileReader();
-                          reader.onload = () => {
-                            if (typeof reader.result === 'string') {
-                              setPlacePhotoUrl(reader.result);
-                              if (!placePhotoCaption) {
-                                setPlacePhotoCaption(file.name.replace(/\.[^.]+$/, ''));
-                              }
-                            }
-                          };
-                          reader.readAsDataURL(file);
-                        }}
-                      />
-                    </label>
-
-                    {[
-                      {
-                        label: 'معماری پلکانی',
-                        url: '/src/assets/images/barzok_historic_architecture_1794421049133.jpg',
-                      },
-                      {
-                        label: 'گلاب‌گیری سنتی',
-                        url: '/src/assets/images/barzok_rosewater_tradition_1794421051440.jpg',
-                      },
-                      {
-                        label: 'کارگاه نساجی',
-                        url: '/src/assets/images/barzok_textile_weaving_1794421051123.jpg',
-                      },
-                      {
-                        label: 'کوچه‌باغ گردو',
-                        url: '/src/assets/images/barzok_walnut_gardens_1794421053291.jpg',
-                      },
-                    ].map((imgPreset) => (
-                      <button
-                        key={imgPreset.label}
-                        type="button"
-                        onClick={() => setPlacePhotoUrl(imgPreset.url)}
-                        className="px-2.5 py-1 rounded bg-white hover:bg-[#D6CEBE] border border-[#806B50]/30 text-[11px]"
-                      >
-                        🖼️ {imgPreset.label}
+                  <label className="block text-xs font-semibold text-[#1C1917]">تصویر مکان (از آلبوم عکس وردپرس)</label>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    {placePhotoUrl && <img src={placePhotoUrl} alt="" className="w-16 h-16 rounded-lg object-cover border border-[#806B50]/30" />}
+                    <button type="button" onClick={() => setWpPicker('image')} className="px-3 py-1.5 rounded-lg bg-[#254B36] text-[#F5F2E9] text-xs font-medium hover:bg-[#1d3b2a]">
+                      📁 {placePhotoUrl ? 'تغییر عکس' : 'انتخاب یا آپلود عکس از آلبوم وردپرس'}
+                    </button>
+                    {placePhotoUrl && (
+                      <button type="button" onClick={() => { setPlacePhotoUrl(''); setPlacePhotoCaption(''); }} className="px-2.5 py-1 rounded bg-white border border-red-300 text-red-700 text-[11px]">
+                        حذف عکس
                       </button>
-                    ))}
+                    )}
                   </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <input
-                        type="text"
-                        value={placePhotoUrl}
-                        onChange={(e) => setPlacePhotoUrl(e.target.value)}
-                        placeholder="آدرس تصویر (یا از دکمه‌های بالا انتخاب کنید)"
-                        className="w-full px-3 py-1.5 rounded-lg bg-white border border-[#806B50]/30 text-xs font-mono-num"
-                      />
-                    </div>
-                    <div>
-                      <input
-                        type="text"
-                        value={placePhotoCaption}
-                        onChange={(e) => setPlacePhotoCaption(e.target.value)}
-                        placeholder="توضیح زیرنویس عکس (اختیاری)"
-                        className="w-full px-3 py-1.5 rounded-lg bg-white border border-[#806B50]/30 text-xs"
-                      />
-                    </div>
-                  </div>
+                  {placePhotoUrl && (
+                    <input type="text" value={placePhotoCaption} onChange={(e) => setPlacePhotoCaption(e.target.value)} placeholder="توضیح زیرنویس عکس (اختیاری)" className="w-full px-3 py-1.5 rounded-lg bg-white border border-[#806B50]/30 text-xs" />
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold mb-1">
-                      {lang === 'fa' ? 'پیوند فایل صوتی (اختیاری)' : 'Audio URL (Optional)'}
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="https://... (در صورت وجود فایل صوتی)"
-                      value={placeAudioUrl}
-                      onChange={(e) => setPlaceAudioUrl(e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg border border-[#806B50]/30 text-xs font-mono-num"
-                    />
+                    <label className="block text-xs font-semibold mb-1">فایل صوتی (از وردپرس)</label>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <button type="button" onClick={() => setWpPicker('audio')} className="px-3 py-1.5 rounded-lg bg-[#254B36] text-[#F5F2E9] text-xs font-medium">
+                        🎧 {placeAudioUrl ? 'تغییر صدا' : 'انتخاب یا آپلود صدا'}
+                      </button>
+                      {placeAudioUrl && (
+                        <button type="button" onClick={() => setPlaceAudioUrl('')} className="px-2.5 py-1 rounded bg-white border border-red-300 text-red-700 text-[11px]">حذف</button>
+                      )}
+                    </div>
+                    {placeAudioUrl && <audio controls preload="none" src={placeAudioUrl} className="w-full h-8 mt-1.5" />}
                   </div>
                   <div>
                     <label className="block text-xs font-semibold mb-1">
-                      {lang === 'fa' ? 'پیوند ویدیو (اختیاری)' : 'Video URL (Optional)'}
+                      {lang === 'fa' ? 'پیوند ویدیو (آپارات یا یوتیوب)' : 'Video URL'}
                     </label>
                     <input
                       type="text"
-                      placeholder="https://... (لینک آپارات یا ویدیو در صورت وجود)"
+                      placeholder="https://www.aparat.com/v/..."
                       value={placeVideoUrl}
                       onChange={(e) => setPlaceVideoUrl(e.target.value)}
                       className="w-full px-3 py-2 rounded-lg border border-[#806B50]/30 text-xs font-mono-num"
                     />
                   </div>
                 </div>
+
+                {wpPicker && (
+                  <WordPressPicker
+                    kind={wpPicker}
+                    wpBase={wpBase}
+                    multiple={false}
+                    onClose={() => setWpPicker(null)}
+                    onPick={(items) => {
+                      const it = items[0];
+                      if (it) {
+                        if (wpPicker === 'image') {
+                          setPlacePhotoUrl(it.source_url);
+                          if (!placePhotoCaption) setPlacePhotoCaption(stripTags(it.title?.rendered || ''));
+                        } else setPlaceAudioUrl(it.source_url);
+                      }
+                      setWpPicker(null);
+                    }}
+                  />
+                )}
 
                 {/* Connect Location to People & Stories */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

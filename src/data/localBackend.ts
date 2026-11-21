@@ -110,9 +110,78 @@ function writeStorage(db: LocalDb) {
   }
 }
 
+// --- Data published on the host (data.json next to index.html) --------------------------------
+// Visitors always see data.json when it exists. An admin's own unsaved edits live in
+// localStorage and are flagged "dirty" until they are published with the "publish" button.
+const DIRTY_KEY = `${STORAGE_KEY}:dirty`;
+let hosted: LocalDb | null = null;
+let hostedLoad: Promise<void> | null = null;
+
+function loadHosted(): Promise<void> {
+  if (!hostedLoad) {
+    hostedLoad = (async () => {
+      try {
+        const res = await fetch(`data.json?t=${Date.now()}`, { cache: 'no-store' });
+        if (!res.ok) return;
+        const json = await res.json();
+        if (json && Array.isArray(json.layers) && Array.isArray(json.places)) hosted = json as LocalDb;
+      } catch {
+        // no data.json on this host (or opened from a dev server): the built-in seed is used
+      }
+    })();
+  }
+  return hostedLoad;
+}
+
+export function isDirty(): boolean {
+  try {
+    return window.localStorage.getItem(DIRTY_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function setDirty(value: boolean) {
+  try {
+    if (value) window.localStorage.setItem(DIRTY_KEY, '1');
+    else window.localStorage.removeItem(DIRTY_KEY);
+  } catch {
+    // ignore
+  }
+  window.dispatchEvent(new Event('barzok-dirty-changed'));
+}
+
+/** Everything that may be published. Visitors' private submissions (contributions) never leave the browser. */
+export function getPublishSnapshot() {
+  const db = getDb();
+  const { contributions: _c, media: _m, ...rest } = db;
+  return clone(rest);
+}
+
+export function markPublished() {
+  setDirty(false);
+}
+
+/** Drop unsaved local edits and show the host's version again. */
+export function discardLocalEdits() {
+  cache = null;
+  try {
+    window.localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // ignore
+  }
+  setDirty(false);
+}
+
 function getDb(): LocalDb {
   if (!cache) {
-    cache = readStorage() ?? seedDb();
+    const local = readStorage();
+    if (local && isDirty()) cache = local;
+    else if (hosted) {
+      cache = clone(hosted);
+      (cache as LocalDb).contributions = local?.contributions ?? [];
+      (cache as LocalDb).media = local?.media ?? [];
+    } else cache = local ?? seedDb();
     for (const key of COLLECTIONS) {
       if (!Array.isArray(cache[key])) (cache as any)[key] = [];
     }
@@ -122,12 +191,15 @@ function getDb(): LocalDb {
 
 function commit() {
   writeStorage(getDb());
+  setDirty(true);
 }
 
 /** Throw away local edits and go back to the JSON seed. */
 export function resetLocalData() {
-  cache = seedDb();
-  writeStorage(cache);
+  cache = hosted ? null : seedDb();
+  if (cache) writeStorage(cache);
+  else discardLocalEdits();
+  setDirty(false);
 }
 
 // Seed image paths are relative ("images/barzok/x.jpg"); make them absolute against BASE_URL.
@@ -527,6 +599,8 @@ function createPlace(b: Body) {
     shortIntroEn: b.shortIntroEn || null,
     fullDescriptionFa: (b.fullDescriptionFa && String(b.fullDescriptionFa).trim()) || shortIntroFa,
     fullDescriptionEn: b.fullDescriptionEn || null,
+    ...(b.geometry ? { geometry: b.geometry } : {}),
+    neighbourhoodId: b.neighbourhoodId || null,
     latitude: normalizeCoord(b.latitude, BARZOK_CENTER.lat),
     longitude: normalizeCoord(b.longitude, BARZOK_CENTER.lng),
     historicalInfoFa: b.historicalInfoFa || null,
@@ -814,6 +888,7 @@ function deleteRecord(resource: string, id: string) {
 // ---------------------------------------------------------------------------
 
 export async function handleLocalRequest(method: string, rawPath: string, body?: Body): Promise<any> {
+  await loadHosted();
   const verb = method.toUpperCase();
   const parts = rawPath.split('?')[0].split('/').filter(Boolean); // ['api','admin','places',':id']
   if (parts[0] !== 'api') throw new Error(`Unknown route: ${rawPath}`);

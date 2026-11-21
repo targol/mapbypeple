@@ -50,7 +50,9 @@ export interface PlaceRecord {
   id: string;
   slug: string;
   /** Optional shape; `latitude`/`longitude` are then a representative point (centroid / middle). */
-  geometry?: PlaceGeometry;
+  geometry?: PlaceGeometry | null;
+  /** Neighbourhood chosen by hand; when empty it is worked out from the neighbourhood boundaries. */
+  neighbourhoodId?: string | null;
   layerId?: string | null;
   additionalLayerIds: string; // JSON stringified string[]
   nameFa: string;
