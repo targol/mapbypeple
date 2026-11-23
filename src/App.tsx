@@ -34,6 +34,7 @@ import { LocationDetailPanel } from './components/LocationDetailPanel';
 import { ContributionModal } from './components/ContributionModal';
 import { AdminDashboard } from './components/AdminDashboard';
 import { attachHostedMedia } from './utils/hostedMedia';
+import { ResultsPanel } from './components/ResultsPanel';
 import { buildNeighbourhoodIndex, NEIGHBOURHOOD_LAYER_ID } from './utils/neighbourhood';
 import { WalkGuide } from './components/WalkGuide';
 import { useGeolocation } from './hooks/useGeolocation';
@@ -86,6 +87,7 @@ function BarzokAppContent() {
 
   // Search & Map/List View Toggle
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [resultsOpen, setResultsOpen] = useState(false);
   const [hoodFilter, setHoodFilter] = useState<string>('');
   const [viewMode, setViewMode] = useState<'map' | 'list'>('map');
 
@@ -107,7 +109,8 @@ function BarzokAppContent() {
   const [walkFocusId, setWalkFocusId] = useState<string | null>(null);
   const [followUser, setFollowUser] = useState<boolean>(false);
 
-  const setAllLayers = (on: boolean) =>
+  const setAllLayers = (on: boolean) => {
+    setResultsOpen(true);
     setEnabledLayerIds(() => {
       const next: Record<string, boolean> = {};
       bundle.layers.forEach((l) => {
@@ -115,6 +118,7 @@ function BarzokAppContent() {
       });
       return next;
     });
+  };
 
   const allNoneBar = (
     <div className="flex items-center gap-2 px-1 pb-1.5 text-xs font-semibold">
@@ -320,6 +324,19 @@ function BarzokAppContent() {
     );
   }
 
+  const resultsPanel = (
+    <ResultsPanel
+      lang={lang}
+      places={filteredPlaces}
+      layers={bundle.layers}
+      hoodByPlace={hoodByPlace}
+      selectedId={selectedPlace?.id || null}
+      open={resultsOpen}
+      onOpenChange={setResultsOpen}
+      onSelect={(p) => handleSelectPlace(p)}
+    />
+  );
+
   // WordPress / Elementor Embed View (/embed) — Full-viewport map with zero header/footer
   if (isEmbedMode) {
     return (
@@ -333,7 +350,10 @@ function BarzokAppContent() {
                 <input
                   type="text"
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    if (e.target.value.trim()) setResultsOpen(true);
+                  }}
                   placeholder={lang === 'fa' ? 'جستجو در نقشه برزک...' : 'Search Barzok map...'}
                   className="w-full ps-8 pe-2.5 py-1.5 rounded-lg bg-white border border-[#806B50]/25 text-xs focus:outline-none focus:border-[#254B36]"
                 />
@@ -362,12 +382,13 @@ function BarzokAppContent() {
                         <input
                           type="checkbox"
                           checked={checked}
-                          onChange={() =>
+                          onChange={() => {
+                            setResultsOpen(true);
                             setEnabledLayerIds((prev) => ({
                               ...prev,
                               [layer.id]: !prev[layer.id],
-                            }))
-                          }
+                            }));
+                          }}
                           className="accent-[#254B36]"
                         />
                         <span
@@ -419,6 +440,7 @@ function BarzokAppContent() {
                   followUser={followUser}
                   onFollowChange={setFollowUser}
             />
+            {resultsPanel}
             {walkGuide}
           </div>
 
@@ -532,7 +554,7 @@ function BarzokAppContent() {
       </header>
 
       {/* Subtitle & Workspace Control Strip below the fold/header */}
-      <div className="px-6 py-2.5 bg-[#EBE6DF]/80 border-b border-[#806B50]/20 flex items-center justify-between gap-4 flex-wrap text-xs">
+      <div className="px-4 py-1.5 bg-[#EBE6DF]/80 border-b border-[#806B50]/20 flex items-center justify-between gap-4 flex-wrap text-xs">
         <div className="flex items-center gap-3 text-[#57534E]">
           <span className="font-medium text-[#1C1917]">
             {lang === 'fa'
@@ -604,11 +626,11 @@ function BarzokAppContent() {
 
       {/* SECTION 1: INTERACTIVE MAP & LIST INTERFACE */}
       {activeSection === 'map' && (
-        <main className="flex-1 flex flex-col md:flex-row relative overflow-hidden min-h-[calc(100vh-125px)]">
+        <main className="flex-1 flex flex-col md:flex-row relative overflow-hidden min-h-[calc(100dvh-100px)]">
           {/* Collapsible Layer & Search Sidebar (Desktop) */}
           <div
             className={`hidden md:flex flex-col bg-[#F5F2E9] border-e border-[#806B50]/25 transition-all duration-200 z-20 shrink-0 ${
-              layerPanelOpen ? 'w-80 lg:w-88' : 'w-14'
+              layerPanelOpen ? 'w-72' : 'w-12'
             }`}
           >
             <div className="p-3.5 border-b border-[#806B50]/20 flex items-center justify-between">
@@ -642,7 +664,10 @@ function BarzokAppContent() {
                     <input
                       type="text"
                       value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onChange={(e) => {
+                        setSearchQuery(e.target.value);
+                        if (e.target.value.trim()) setResultsOpen(true);
+                      }}
                       placeholder={
                         lang === 'fa'
                           ? 'جستجو در برزک...'
@@ -663,7 +688,10 @@ function BarzokAppContent() {
                   {hoodList.length > 0 && (
                     <select
                       value={hoodFilter}
-                      onChange={(e) => setHoodFilter(e.target.value)}
+                      onChange={(e) => {
+                        setHoodFilter(e.target.value);
+                        setResultsOpen(true);
+                      }}
                       aria-label={lang === 'fa' ? 'فیلتر محله' : 'Neighbourhood filter'}
                       className="mt-2 w-full px-2.5 py-2 rounded-lg bg-white border border-[#806B50]/30 text-xs text-[#1C1917]"
                     >
@@ -766,12 +794,13 @@ function BarzokAppContent() {
                               <input
                                 type="checkbox"
                                 checked={checked}
-                                onChange={() =>
+                                onChange={() => {
+                                  setResultsOpen(true);
                                   setEnabledLayerIds((prev) => ({
                                     ...prev,
                                     [layer.id]: !prev[layer.id],
-                                  }))
-                                }
+                                  }));
+                                }}
                                 className="mt-1 accent-[#254B36]"
                               />
                               <div
@@ -878,6 +907,7 @@ function BarzokAppContent() {
                     setContributionOpen(true);
                   }}
                 />
+                {resultsPanel}
                 {walkGuide}
               </div>
             ) : (
@@ -989,7 +1019,10 @@ function BarzokAppContent() {
                 <input
                   type="text"
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    if (e.target.value.trim()) setResultsOpen(true);
+                  }}
                   placeholder={lang === 'fa' ? 'جستجو در نقشه...' : 'Search...'}
                   className="w-full px-3 py-2 rounded-lg bg-white border border-[#806B50]/30 text-xs"
                 />
@@ -1005,12 +1038,13 @@ function BarzokAppContent() {
                         <input
                           type="checkbox"
                           checked={checked}
-                          onChange={() =>
+                          onChange={() => {
+                            setResultsOpen(true);
                             setEnabledLayerIds((prev) => ({
                               ...prev,
                               [layer.id]: !prev[layer.id],
-                            }))
-                          }
+                            }));
+                          }}
                           className="accent-[#254B36]"
                         />
                         <span className="truncate">
