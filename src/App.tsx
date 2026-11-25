@@ -337,6 +337,7 @@ function BarzokAppContent() {
       hoodByPlace={hoodByPlace}
       selectedId={selectedPlace?.id || null}
       open={resultsOpen}
+      side={isEmbedMode && lang === 'fa' ? 'right' : 'left'}
       onOpenChange={setResultsOpen}
       onSelect={(p) => handleSelectPlace(p)}
     />
@@ -349,7 +350,7 @@ function BarzokAppContent() {
   return (
     <div className={`${isEmbedMode ? 'h-screen overflow-hidden' : 'min-h-screen'} flex flex-col bg-[#F5F2E9] text-[#1C1917]`}>
       {/* Strict 3-Zone Top Bar Contract (frontend-design §2) */}
-      <header className="flex items-center justify-between gap-8 px-6 py-3.5 bg-[#F5F2E9] border-b border-[#806B50]/25 shrink-0 z-30">
+      <header className={`${isEmbedMode && activeSection === 'map' ? 'md:hidden ' : ''}flex items-center justify-between gap-8 px-6 py-3.5 bg-[#F5F2E9] border-b border-[#806B50]/25 shrink-0 z-30`}>
         {/* Zone 1: Single text element wordmark */}
         {!isEmbedMode && (
         <a
@@ -514,7 +515,9 @@ function BarzokAppContent() {
         <main className="flex-1 flex flex-col md:flex-row relative overflow-hidden min-h-[calc(100dvh-100px)]">
           {/* Collapsible Layer & Search Sidebar (Desktop) */}
           <div
-            className={`hidden md:flex flex-col bg-[#F5F2E9] border-e border-[#806B50]/25 transition-all duration-200 z-20 shrink-0 ${
+            className={`hidden md:flex flex-col bg-[#F5F2E9] ${
+              isEmbedMode ? 'ltr:border-e rtl:border-s rtl:order-last' : 'border-e'
+            } border-[#806B50]/25 transition-all duration-200 z-20 shrink-0 ${
               layerPanelOpen ? 'w-72' : 'w-12'
             }`}
           >
@@ -534,6 +537,41 @@ function BarzokAppContent() {
                 <SlidersHorizontal className="w-4 h-4" />
               </button>
             </div>
+
+            {isEmbedMode && layerPanelOpen && (
+              <nav className="px-4 py-3 border-b border-[#806B50]/20 space-y-2" aria-label="menu">
+                <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-sm font-medium">
+                  {([
+                    ['map', lang === 'fa' ? 'نقشه' : 'Map'],
+                    ['stories', lang === 'fa' ? 'داستان‌ها' : 'Stories'],
+                    ['people', lang === 'fa' ? 'مردم و مشاغل' : 'People & Crafts'],
+                    ['about', lang === 'fa' ? 'درباره پروژه' : 'About'],
+                  ] as [PublicSection, string][]).map(([k, label]) => (
+                    <button
+                      key={k}
+                      type="button"
+                      onClick={() => navigateToSection(k)}
+                      className={activeSection === k ? 'text-[#254B36] font-bold underline underline-offset-8 decoration-[#D6A83F] decoration-2' : 'hover:text-[#254B36]'}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                  <button type="button" onClick={() => setLang((prev) => (prev === 'fa' ? 'en' : 'fa'))} className="text-xs font-mono-num hover:text-[#254B36]">
+                    {lang === 'fa' ? 'EN' : 'فارسی'}
+                  </button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button type="button" onClick={() => setContributionOpen(true)} className="px-3 py-1.5 text-xs font-medium text-[#F5F2E9] bg-[#254B36] rounded-lg">
+                    {lang === 'fa' ? 'ثبت مشارکت مردمی' : 'Contribute Memory'}
+                  </button>
+                  {hostAuth?.canEdit && (
+                    <a href="?admin=1" target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 text-xs font-semibold text-[#254B36] border border-[#254B36] rounded-lg">
+                      ✎ {lang === 'fa' ? 'ویرایش' : 'Edit'}
+                    </a>
+                  )}
+                </div>
+              </nav>
+            )}
 
             {layerPanelOpen && (
               <div className="flex-1 overflow-y-auto p-4 space-y-5">

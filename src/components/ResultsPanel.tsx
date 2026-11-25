@@ -15,6 +15,7 @@ export function ResultsPanel({
   open,
   onOpenChange,
   onSelect,
+  side = 'left',
 }: {
   lang: Language;
   places: PlaceRecord[];
@@ -24,7 +25,9 @@ export function ResultsPanel({
   open: boolean;
   onOpenChange: (o: boolean) => void;
   onSelect: (p: PlaceRecord) => void;
+  side?: 'left' | 'right';
 }) {
+  const pos = side === 'right' ? 'right-3' : 'left-3';
   const [expanded, setExpanded] = useState<string | null>(null);
   const fa = lang === 'fa';
   const layerOf = (id: string | null | undefined) => layers.find((l) => l.id === id);
@@ -34,7 +37,7 @@ export function ResultsPanel({
       <button
         type="button"
         onClick={() => onOpenChange(true)}
-        className="absolute top-3 left-3 z-[500] flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#F5F2E9]/95 border border-[#806B50]/35 shadow-md text-xs font-semibold text-[#254B36]"
+        className={`absolute top-3 ${pos} z-[500] flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#F5F2E9]/95 border border-[#806B50]/35 shadow-md text-xs font-semibold text-[#254B36]`}
       >
         <List className="w-4 h-4" />
         {fa ? `فهرست (${places.length})` : `List (${places.length})`}
@@ -45,7 +48,7 @@ export function ResultsPanel({
   return (
     <aside
       data-testid="results-panel"
-      className="absolute top-3 left-3 z-[500] w-72 max-w-[calc(100%-24px)] max-h-[calc(100%-13rem)] min-h-24 flex flex-col rounded-xl bg-[#F5F2E9]/97 border border-[#806B50]/35 shadow-lg overflow-hidden"
+      className={`absolute top-3 ${pos} z-[500] w-72 max-w-[calc(100%-24px)] max-h-[calc(100%-13rem)] min-h-24 flex flex-col rounded-xl bg-[#F5F2E9]/97 border border-[#806B50]/35 shadow-lg overflow-hidden`}
     >
       <div className="flex items-center justify-between px-3 py-2 border-b border-[#806B50]/20">
         <span className="text-xs font-bold text-[#1C1917]">{fa ? `نتایج (${places.length})` : `Results (${places.length})`}</span>
