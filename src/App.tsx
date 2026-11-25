@@ -342,154 +342,16 @@ function BarzokAppContent() {
     />
   );
 
-  // WordPress / Elementor Embed View (/embed) — Full-viewport map with zero header/footer
-  if (isEmbedMode) {
-    return (
-      <div className="w-screen h-screen overflow-hidden flex flex-col bg-[#F5F2E9]">
-        <div className="relative flex-1 flex overflow-hidden">
-          {hostAuth?.canEdit && (
-            <a
-              href="?admin=1"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="absolute top-3 left-1/2 -translate-x-1/2 z-30 px-3 py-1.5 rounded-lg bg-[#254B36] text-[#F5F2E9] text-xs font-semibold shadow"
-            >
-              ✎ ویرایش نقشه
-            </a>
-          )}
-          {/* Floating Layer & Search Overlay inside Embed View */}
-          <div className="absolute top-3 right-3 z-20 w-72 max-w-[calc(100vw-24px)] bg-[#F5F2E9]/95 backdrop-blur-sm border border-[#806B50]/30 rounded-xl shadow-md overflow-hidden">
-            <div className="p-2.5 border-b border-[#806B50]/20 flex items-center gap-2">
-              <div className="relative flex-1">
-                <Search className="w-3.5 h-3.5 text-[#806B50] absolute top-1/2 -translate-y-1/2 start-2.5" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value);
-                    if (e.target.value.trim()) setResultsOpen(true);
-                  }}
-                  placeholder={lang === 'fa' ? 'جستجو در نقشه برزک...' : 'Search Barzok map...'}
-                  className="w-full ps-8 pe-2.5 py-1.5 rounded-lg bg-white border border-[#806B50]/25 text-xs focus:outline-none focus:border-[#254B36]"
-                />
-              </div>
-              <button
-                type="button"
-                onClick={() => setLayerPanelOpen((prev) => !prev)}
-                className="p-1.5 rounded-lg bg-[#EBE6DF] text-[#254B36] hover:bg-[#D6CEBE]"
-                title={lang === 'fa' ? 'لایه‌های نقشه' : 'Map Layers'}
-              >
-                <Layers className="w-4 h-4" />
-              </button>
-            </div>
-
-            {layerPanelOpen && (
-              <div className="p-2.5 max-h-60 overflow-y-auto space-y-1">
-                {allNoneBar}
-                {bundle.layers.map((layer) => {
-                  const checked = Boolean(enabledLayerIds[layer.id]);
-                  return (
-                    <label
-                      key={layer.id}
-                      className="flex items-center justify-between gap-2 px-2 py-1.5 rounded-lg hover:bg-[#EBE6DF]/70 cursor-pointer text-xs"
-                    >
-                      <div className="flex items-center gap-2 truncate">
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => {
-                            setResultsOpen(true);
-                            setEnabledLayerIds((prev) => ({
-                              ...prev,
-                              [layer.id]: !prev[layer.id],
-                            }));
-                          }}
-                          className="accent-[#254B36]"
-                        />
-                        <span
-                          style={{ backgroundColor: layer.color }}
-                          className="w-5 h-5 rounded-full text-white flex items-center justify-center shrink-0"
-                        >
-                          <LayerIcon name={layer.icon} className="w-3 h-3" />
-                        </span>
-                        <span className="truncate font-medium text-[#1C1917]">
-                          {lang === 'fa' ? layer.nameFa : layer.nameEn || layer.nameFa}
-                        </span>
-                      </div>
-                    </label>
-                  );
-                })}
-              </div>
-            )}
-            {bundle.routes.length > 0 && (
-              <div className="p-2.5 border-t border-[#806B50]/20 space-y-1">
-                {bundle.routes.map((rt) => (
-                  <button
-                    key={rt.id}
-                    type="button"
-                    onClick={() => startRoute(activeRoute?.id === rt.id ? null : rt)}
-                    className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg bg-[#254B36] text-[#F5F2E9] text-xs font-semibold"
-                  >
-                    <RouteIcon className="w-4 h-4 shrink-0" />
-                    <span className="truncate">
-                      {lang === 'fa' ? 'شروع پیاده‌روی: ' : 'Start walk: '}
-                      {lang === 'fa' ? rt.titleFa : rt.titleEn || rt.titleFa}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="flex-1 h-full relative">
-            <BarzokMapCanvas
-              lang={lang}
-              layers={bundle.layers}
-              places={filteredPlaces}
-              allPlaces={bundle.places}
-              activeRoute={activeRoute}
-              selectedPlaceId={selectedPlace?.id || walkFocusId}
-              onSelectPlace={handleSelectPlace}
-              userPosition={geo.position}
-              onLocateMe={geo.start}
-                  followUser={followUser}
-                  onFollowChange={setFollowUser}
-            />
-            {resultsPanel}
-            {walkGuide}
-          </div>
-
-          {selectedPlace && (
-            <LocationDetailPanel
-              lang={lang}
-              place={selectedPlace}
-              layers={bundle.layers}
-              allPlaces={bundle.places}
-              people={bundle.people}
-              stories={bundle.stories}
-              events={bundle.events}
-              placePeople={bundle.placePeople}
-              placeStories={bundle.placeStories}
-              neighbourhood={hoodByPlace[selectedPlace.id] ?? null}
-              onClose={() => handleSelectPlace(null)}
-              onSelectPlace={handleSelectPlace}
-              onSelectStory={(st) => setSelectedStoryModal(st)}
-            />
-          )}
-        </div>
-      </div>
-    );
-  }
-
   // `?embed=1` works on any static host (no server rewrite needed, unlike `/embed`).
   const embedUrl = buildEmbedUrl();
   const iframeSnippet = `<iframe src="${embedUrl}" width="100%" height="680" style="border:0; border-radius: 12px; overflow: hidden;" allow="geolocation" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="مردمنگار برزک | Barzok People Map"></iframe>`;
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F5F2E9] text-[#1C1917]">
+    <div className={`${isEmbedMode ? 'h-screen overflow-hidden' : 'min-h-screen'} flex flex-col bg-[#F5F2E9] text-[#1C1917]`}>
       {/* Strict 3-Zone Top Bar Contract (frontend-design §2) */}
       <header className="flex items-center justify-between gap-8 px-6 py-3.5 bg-[#F5F2E9] border-b border-[#806B50]/25 shrink-0 z-30">
         {/* Zone 1: Single text element wordmark */}
+        {!isEmbedMode && (
         <a
           href="?"
           onClick={(e) => {
@@ -500,6 +362,7 @@ function BarzokAppContent() {
         >
           {lang === 'fa' ? 'نقشه مردم‌نگار برزک' : 'Barzok People Map'}
         </a>
+        )}
 
         {/* Zone 2: 4–5 concise single-line text navigation links */}
         <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-[#57534E]">
@@ -558,6 +421,11 @@ function BarzokAppContent() {
 
         {/* Zone 3: 1 primary action */}
         <div className="flex items-center gap-3 shrink-0">
+          {isEmbedMode && hostAuth?.canEdit && (
+            <a href="?admin=1" target="_blank" rel="noopener noreferrer" className="px-3 py-2 text-xs font-semibold text-[#254B36] border border-[#254B36] rounded-lg whitespace-nowrap">
+              ✎ ویرایش نقشه
+            </a>
+          )}
           <button
             type="button"
             onClick={() => setContributionOpen(true)}
@@ -569,7 +437,7 @@ function BarzokAppContent() {
       </header>
 
       {/* Subtitle & Workspace Control Strip below the fold/header */}
-      <div className="px-4 py-1.5 bg-[#EBE6DF]/80 border-b border-[#806B50]/20 flex items-center justify-between gap-4 flex-wrap text-xs">
+      {!isEmbedMode && <div className="px-4 py-1.5 bg-[#EBE6DF]/80 border-b border-[#806B50]/20 flex items-center justify-between gap-4 flex-wrap text-xs">
         <div className="flex items-center gap-3 text-[#57534E]">
           <span className="font-medium text-[#1C1917]">
             {lang === 'fa'
@@ -618,7 +486,7 @@ function BarzokAppContent() {
           </button>
 )}
         </div>
-      </div>
+      </div>}
 
       {/* Coordinate Picking Banner when user is selecting a point for Community Contribution */}
       {pickingForContribution && (
@@ -1367,7 +1235,7 @@ function BarzokAppContent() {
       )}
 
       {/* Minimal Editorial Footer (Hidden in Map workspace on mobile to preserve full screen map) */}
-      <footer className="px-6 py-3 bg-[#EBE6DF] border-t border-[#806B50]/20 text-xs text-[#57534E] flex items-center justify-between gap-4 flex-wrap">
+      {!isEmbedMode && <footer className="px-6 py-3 bg-[#EBE6DF] border-t border-[#806B50]/20 text-xs text-[#57534E] flex items-center justify-between gap-4 flex-wrap">
         <span>
           {lang === 'fa'
             ? 'مردمنگار برزک — سامانه دیجیتال میراث فرهنگی و مردم‌نگاری برزک کاشان'
@@ -1388,7 +1256,7 @@ function BarzokAppContent() {
           </button>
 )}
         </div>
-      </footer>
+      </footer>}
     </div>
   );
 }
