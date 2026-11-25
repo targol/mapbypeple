@@ -73,6 +73,7 @@ export interface PlaceRecord {
   audioRecordings: string; // JSON stringified AudioItem[]
   videoLinks: string; // JSON stringified VideoItem[]
   sourceReference?: string | null;
+  referenceLinks?: string; // JSON stringified ReferenceItem[]
   documentationDate?: string | null;
   contributorName?: string | null;
   contributorApproved: boolean;
@@ -94,6 +95,7 @@ export interface PersonRecord {
   era?: string | null;
   avatarUrl?: string | null;
   sourceReference?: string | null;
+  referenceLinks?: string; // JSON stringified ReferenceItem[]
   contributorName?: string | null;
   publicationStatus: string;
   verificationStatus: string;
@@ -115,6 +117,7 @@ export interface StoryRecord {
   imageUrl?: string | null;
   recordedDate?: string | null;
   sourceReference?: string | null;
+  referenceLinks?: string; // JSON stringified ReferenceItem[]
   contributorName?: string | null;
   publicationStatus: string;
   verificationStatus: string;
@@ -133,6 +136,7 @@ export interface EventRecord {
   seasonOrDateEn?: string | null;
   eventType: string;
   sourceReference?: string | null;
+  referenceLinks?: string; // JSON stringified ReferenceItem[]
   publicationStatus: string;
   verificationStatus: string;
   isDemo: boolean;
@@ -180,6 +184,7 @@ export interface MediaRecord {
   captureDate?: string | null;
   photographerOrCreator?: string | null;
   sourceReference?: string | null;
+  referenceLinks?: string; // JSON stringified ReferenceItem[]
   publicationStatus: string;
   verificationStatus: string;
   isDemo: boolean;
@@ -240,3 +245,14 @@ export const BARZOK_CENTER = {
   lng: 51.22722,
   defaultZoom: 15,
 };
+
+export type ReferenceKind = 'article' | 'book' | 'website' | 'other';
+export interface ReferenceItem {
+  title: string;
+  url?: string;
+  kind: ReferenceKind;
+}
+
+export const PLACE_STATUS_OPTIONS = ['فعال', 'نیازمند مرمت', 'تخریب‌شده', 'تغییر کاربری‌یافته'] as const;
+
+export const ORG_TAG_FA = 'مستندسازی: اقامتگاه برزک';

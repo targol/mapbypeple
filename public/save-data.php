@@ -4,10 +4,10 @@
  *   target "media" -> media.json (photos, audio, video of places)
  *   target "data"  -> data.json  (all places, layers, people, stories, events, routes)
  *
- * SETUP: put this file next to index.html and change the password below to a long random one.
- * Whoever knows it can change the map. The previous version of each file is kept as *.backup.json.
+ * SETUP: copy save-config.sample.php to save-config.php and choose WordPress-login or password mode. The previous version of each file is kept as *.backup.json.
  */
-$PASSWORD = 'CHANGE-ME';
+require __DIR__ . '/auth-lib.php';
+$CFG = barzok_config();
 
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
@@ -19,12 +19,20 @@ function fail($code, $msg) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') fail(405, 'POST only');
-if ($PASSWORD === 'CHANGE-ME') fail(500, 'Set a password inside save-data.php first');
-
 $in = json_decode(file_get_contents('php://input'), true);
-if (!is_array($in) || !isset($in['password']) || !hash_equals($PASSWORD, (string)$in['password'])) {
-    usleep(500000);
-    fail(403, 'Wrong password');
+if (!is_array($in)) fail(400, 'Bad request');
+if ($CFG['mode'] === 'wordpress') {
+    // cookie login: the custom header cannot be sent by other websites, which blocks cross-site forgery
+    if (($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') !== 'barzok') fail(403, 'Bad request header');
+    $chk = barzok_wp_check($CFG);
+    if ($chk['error']) fail(500, $chk['error']);
+    if (!$chk['canEdit']) fail(403, 'برای ذخیره باید در سایت وردپرس وارد شده باشید');
+} else {
+    if ($CFG['password'] === 'CHANGE-ME') fail(500, 'Create save-config.php first (see save-config.sample.php)');
+    if (!isset($in['password']) || !hash_equals($CFG['password'], (string)$in['password'])) {
+        usleep(500000);
+        fail(403, 'Wrong password');
+    }
 }
 $target = $in['target'] ?? 'media';
 

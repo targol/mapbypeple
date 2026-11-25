@@ -34,6 +34,9 @@ import { LocationDetailPanel } from './components/LocationDetailPanel';
 import { ContributionModal } from './components/ContributionModal';
 import { AdminDashboard } from './components/AdminDashboard';
 import { attachHostedMedia } from './utils/hostedMedia';
+import { useHostAuth } from './utils/hostAuth';
+import { LayerAllToggle } from './components/LayerAllToggle';
+import { ReferenceList, parseRefs } from './components/ReferenceList';
 import { ResultsPanel } from './components/ResultsPanel';
 import { buildNeighbourhoodIndex, NEIGHBOURHOOD_LAYER_ID } from './utils/neighbourhood';
 import { WalkGuide } from './components/WalkGuide';
@@ -88,6 +91,8 @@ function BarzokAppContent() {
   // Search & Map/List View Toggle
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [resultsOpen, setResultsOpen] = useState(false);
+  const hostAuth = useHostAuth();
+  const showAdminLink = !hostAuth || hostAuth.mode !== 'wordpress' || hostAuth.canEdit;
   const [hoodFilter, setHoodFilter] = useState<string>('');
   const [viewMode, setViewMode] = useState<'map' | 'list'>('map');
 
@@ -121,14 +126,7 @@ function BarzokAppContent() {
   };
 
   const allNoneBar = (
-    <div className="flex items-center gap-2 px-1 pb-1.5 text-xs font-semibold">
-      <button type="button" onClick={() => setAllLayers(true)} className="px-2.5 py-1 rounded-md bg-[#254B36] text-[#F5F2E9]">
-        {lang === 'fa' ? 'روشن کردن همه' : 'Show all'}
-      </button>
-      <button type="button" onClick={() => setAllLayers(false)} className="px-2.5 py-1 rounded-md bg-[#EBE6DF] text-[#1C1917]">
-        {lang === 'fa' ? 'خاموش کردن همه' : 'Hide all'}
-      </button>
-    </div>
+    <LayerAllToggle lang={lang} total={bundle.layers.length} on={bundle.layers.filter((l) => enabledLayerIds[l.id]).length} onChange={setAllLayers} />
   );
 
   const startRoute = (rt: RouteRecord | null) => {
@@ -211,6 +209,11 @@ function BarzokAppContent() {
 
   // Filter places by enabled thematic layers AND search query (including matching people & stories)
   const hoodByPlace = useMemo(() => buildNeighbourhoodIndex(bundle.places), [bundle.places]);
+  const hoodCounts = useMemo(() => {
+    const c: Record<string, number> = {};
+    Object.values(hoodByPlace).forEach((h) => (c[h.id] = (c[h.id] || 0) + 1));
+    return c;
+  }, [hoodByPlace]);
   const hoodList = useMemo(() => bundle.places.filter((p) => p.layerId === NEIGHBOURHOOD_LAYER_ID), [bundle.places]);
 
   const filteredPlaces = useMemo(() => {
@@ -254,11 +257,13 @@ function BarzokAppContent() {
       const primaryActive = place.layerId ? enabledLayerIds[place.layerId] : true;
       const secondaryActive = extraIds.some((id) => enabledLayerIds[id]);
 
-      if (!primaryActive && !secondaryActive) {
+      const isChosenHood = Boolean(hoodFilter) && place.id === hoodFilter;
+
+      if (!primaryActive && !secondaryActive && !isChosenHood) {
         return false;
       }
 
-      if (hoodFilter && hoodByPlace[place.id]?.id !== hoodFilter) return false;
+      if (hoodFilter && !isChosenHood && hoodByPlace[place.id]?.id !== hoodFilter) return false;
 
       if (!q) return true;
 
@@ -342,6 +347,16 @@ function BarzokAppContent() {
     return (
       <div className="w-screen h-screen overflow-hidden flex flex-col bg-[#F5F2E9]">
         <div className="relative flex-1 flex overflow-hidden">
+          {hostAuth?.canEdit && (
+            <a
+              href="?admin=1"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="absolute top-3 left-1/2 -translate-x-1/2 z-30 px-3 py-1.5 rounded-lg bg-[#254B36] text-[#F5F2E9] text-xs font-semibold shadow"
+            >
+              ✎ ویرایش نقشه
+            </a>
+          )}
           {/* Floating Layer & Search Overlay inside Embed View */}
           <div className="absolute top-3 right-3 z-20 w-72 max-w-[calc(100vw-24px)] bg-[#F5F2E9]/95 backdrop-blur-sm border border-[#806B50]/30 rounded-xl shadow-md overflow-hidden">
             <div className="p-2.5 border-b border-[#806B50]/20 flex items-center gap-2">
@@ -483,7 +498,7 @@ function BarzokAppContent() {
           }}
           className="text-xl font-bold tracking-tight text-[#254B36] whitespace-nowrap shrink-0"
         >
-          {lang === 'fa' ? 'مردمنگار برزک' : 'Barzok People Map'}
+          {lang === 'fa' ? 'نقشه مردم‌نگار برزک' : 'Barzok People Map'}
         </a>
 
         {/* Zone 2: 4–5 concise single-line text navigation links */}
@@ -558,8 +573,8 @@ function BarzokAppContent() {
         <div className="flex items-center gap-3 text-[#57534E]">
           <span className="font-medium text-[#1C1917]">
             {lang === 'fa'
-              ? 'نقشه زنده حافظه، فرهنگ و زندگی مردم برزک'
-              : 'Living Map of Memory, Culture, and Everyday Life in Barzok'}
+              ? 'نگاشتی زنده از زندگی، فرهنگ، آیین‌ها و خاطرات مردم برزک'
+              : 'A living map of the life, culture, rituals and memories of Barzok'}
           </span>
           {hasDemoRecords && (
             <>
@@ -593,13 +608,15 @@ function BarzokAppContent() {
               {lang === 'fa' ? 'EN' : 'فا'}
             </button>
           </div>
-          <button
+          {showAdminLink && (
+<button
             type="button"
             onClick={() => navigateToSection('admin')}
             className="text-xs text-[#806B50] hover:text-[#254B36] transition-colors whitespace-nowrap"
           >
             {lang === 'fa' ? 'ورود مدیران (/admin)' : 'Admin Login (/admin)'}
           </button>
+)}
         </div>
       </div>
 
@@ -698,10 +715,15 @@ function BarzokAppContent() {
                       <option value="">{lang === 'fa' ? 'همه‌ی محله‌ها' : 'All neighbourhoods'}</option>
                       {hoodList.map((h) => (
                         <option key={h.id} value={h.id}>
-                          {lang === 'fa' ? h.nameFa : h.nameEn || h.nameFa}
+                          {lang === 'fa' ? h.nameFa : h.nameEn || h.nameFa} ({hoodCounts[h.id] || 0})
                         </option>
                       ))}
                     </select>
+                  )}
+                  {hoodFilter && !hoodCounts[hoodFilter] && (
+                    <p className="mt-2 text-[11px] leading-relaxed text-[#7a5a0a] bg-[#D6A83F]/20 rounded-lg p-2">
+                      هنوز هیچ مکانی به این محله اختصاص داده نشده است. در پنل مدیریت، برای هر مکان «محله» را انتخاب کنید یا مرز محله را طوری بکشید که مکان‌ها داخلش بیفتند.
+                    </p>
                   )}
                 </div>
 
@@ -743,23 +765,7 @@ function BarzokAppContent() {
                     <span className="text-xs font-semibold text-[#57534E]">
                       {lang === 'fa' ? 'لایه‌های نقشه' : 'Map Layers'}
                     </span>
-                    <div className="flex items-center gap-2 text-[11px]">
-                      <button
-                        type="button"
-                        onClick={() => setAllLayers(true)}
-                        className="px-2 py-0.5 rounded bg-[#254B36] text-[#F5F2E9] font-semibold"
-                      >
-                        {lang === 'fa' ? 'روشن کردن همه' : 'Show all'}
-                      </button>
-                      <span>·</span>
-                      <button
-                        type="button"
-                        onClick={() => setAllLayers(false)}
-                        className="px-2 py-0.5 rounded bg-[#EBE6DF] text-[#1C1917] font-semibold"
-                      >
-                        {lang === 'fa' ? 'خاموش کردن همه' : 'Hide all'}
-                      </button>
-                    </div>
+                    <LayerAllToggle lang={lang} total={bundle.layers.length} on={bundle.layers.filter((l) => enabledLayerIds[l.id]).length} onChange={setAllLayers} />
                   </div>
 
                   {loading ? (
@@ -1339,6 +1345,7 @@ function BarzokAppContent() {
               <p className="text-sm text-[#1C1917] leading-loose whitespace-pre-line">
                 {selectedStoryModal.contentFa}
               </p>
+              <ReferenceList lang={lang} refs={parseRefs(selectedStoryModal.referenceLinks)} />
             </div>
           </div>
         </div>
@@ -1371,13 +1378,15 @@ function BarzokAppContent() {
             {lang === 'fa' ? 'نمای جاسازی (embed)' : 'Embed View (embed)'}
           </a>
           <span>·</span>
-          <button
+          {showAdminLink && (
+<button
             type="button"
             onClick={() => navigateToSection('admin')}
             className="hover:text-[#254B36]"
           >
             {lang === 'fa' ? 'پنل مدیریت (/admin)' : 'Admin CMS (/admin)'}
           </button>
+)}
         </div>
       </footer>
     </div>

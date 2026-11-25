@@ -1,5 +1,8 @@
 import { videoEmbedUrl } from '../utils/hostedMedia';
 import { ShareMenu } from './ShareMenu';
+import type { ReferenceItem } from '../types';
+import { ReferenceList, parseRefs } from './ReferenceList';
+import { ORG_TAG_FA } from '../types';
 import { placeUrl } from '../utils/urls';
 import React, { useMemo, useState } from 'react';
 import {
@@ -106,6 +109,8 @@ export function LocationDetailPanel({
     () => layers.filter((l) => additionalLayerIds.includes(l.id)),
     [layers, additionalLayerIds]
   );
+
+  const references = useMemo(() => safeParseJson<ReferenceItem[]>(place.referenceLinks, []), [place.referenceLinks]);
 
   const historicalPhotos = useMemo(
     () => safeParseJson<PhotoItem[]>(place.historicalPhotos, []),
@@ -384,10 +389,18 @@ export function LocationDetailPanel({
                 <dt className="text-xs font-semibold text-[#806B50] mb-1">
                   {lang === 'fa' ? 'وضعیت کنونی' : 'Current Status'}
                 </dt>
-                <dd className="text-[#292524] leading-relaxed">
-                  {lang === 'fa'
-                    ? place.currentStatusFa
-                    : place.currentStatusEn || place.currentStatusFa}
+                <dd>
+                  <span
+                    className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                      place.currentStatusFa === 'فعال'
+                        ? 'bg-[#254B36]/15 text-[#254B36]'
+                        : place.currentStatusFa === 'تخریب‌شده'
+                          ? 'bg-red-100 text-red-800'
+                          : 'bg-[#D6A83F]/30 text-[#7a5a0a]'
+                    }`}
+                  >
+                    {lang === 'fa' ? place.currentStatusFa : place.currentStatusEn || place.currentStatusFa}
+                  </span>
                 </dd>
               </div>
             )}
@@ -572,6 +585,7 @@ export function LocationDetailPanel({
                   <p className="text-xs text-[#57534E] leading-relaxed">
                     {lang === 'fa' ? ev.descriptionFa : ev.descriptionEn || ev.descriptionFa}
                   </p>
+                  <ReferenceList lang={lang} refs={parseRefs(ev.referenceLinks)} heading={false} />
                 </div>
               ))}
             </div>
@@ -612,14 +626,25 @@ export function LocationDetailPanel({
           </div>
         )}
 
-        {/* Archival Provenance, Source Reference & Contributor Metadata */}
+        {references.length > 0 && (
+          <div className="border-t border-[#806B50]/20 pt-5">
+            <ReferenceList lang={lang} refs={references} />
+          </div>
+        )}
+
+        {/* Provenance: everything on the map is documented by the lodge */}
         <div className="border-t border-[#806B50]/20 pt-5 text-xs text-[#57534E] space-y-1.5">
           <div>
-            <span className="font-semibold text-[#1C1917]">
-              {lang === 'fa' ? 'منبع و ارجاع: ' : 'Source & Reference: '}
+            <span className="inline-block px-2.5 py-1 rounded-full bg-[#254B36] text-[#F5F2E9] font-semibold">
+              {lang === 'fa' ? ORG_TAG_FA : 'Documented by Khaneh Barzok'}
             </span>
-            <span>{place.sourceReference || (lang === 'fa' ? 'ثبت میدانی' : 'Field record')}</span>
           </div>
+          {place.sourceReference && /مشارکت مردمی/.test(place.sourceReference) && (
+            <div>
+              <span className="font-semibold text-[#1C1917]">{lang === 'fa' ? 'منبع: ' : 'Source: '}</span>
+              <span>{place.sourceReference}</span>
+            </div>
+          )}
           {place.documentationDate && (
             <div>
               <span className="font-semibold text-[#1C1917]">

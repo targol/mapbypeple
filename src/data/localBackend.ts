@@ -611,6 +611,7 @@ function createPlace(b: Body) {
     recentPhotos: asJsonString(b.recentPhotos, []),
     audioRecordings: asJsonString(b.audioRecordings, []),
     videoLinks: asJsonString(b.videoLinks, []),
+    referenceLinks: asJsonString(b.referenceLinks, []),
     sourceReference: b.sourceReference || null,
     documentationDate: b.documentationDate || null,
     contributorName: b.contributorName || null,
@@ -638,7 +639,7 @@ function updatePlace(id: string, b: Body) {
 
   if (payload.latitude !== undefined) payload.latitude = normalizeCoord(payload.latitude, BARZOK_CENTER.lat);
   if (payload.longitude !== undefined) payload.longitude = normalizeCoord(payload.longitude, BARZOK_CENTER.lng);
-  for (const key of ['additionalLayerIds', 'historicalPhotos', 'recentPhotos', 'audioRecordings', 'videoLinks']) {
+  for (const key of ['additionalLayerIds', 'historicalPhotos', 'recentPhotos', 'audioRecordings', 'videoLinks', 'referenceLinks']) {
     if (payload[key] && typeof payload[key] !== 'string') payload[key] = JSON.stringify(payload[key]);
   }
   if (payload.layerId !== undefined) payload.layerId = validLayerId(payload.layerId);
@@ -696,6 +697,7 @@ function createStory(b: Body) {
     audioUrl: b.audioUrl || null,
     imageUrl: b.imageUrl || null,
     recordedDate: b.recordedDate || null,
+    referenceLinks: asJsonString(b.referenceLinks, []),
     sourceReference: b.sourceReference || null,
     contributorName: b.contributorName || null,
     publicationStatus: b.publicationStatus || 'published',
@@ -724,6 +726,7 @@ function createEvent(b: Body) {
     seasonOrDateFa: b.seasonOrDateFa,
     seasonOrDateEn: b.seasonOrDateEn || null,
     eventType: b.eventType || 'ritual',
+    referenceLinks: asJsonString(b.referenceLinks, []),
     sourceReference: b.sourceReference || null,
     publicationStatus: b.publicationStatus || 'published',
     verificationStatus: b.verificationStatus || 'verified',
@@ -805,7 +808,9 @@ function updateFlat(collection: 'layers' | 'people' | 'events' | 'media', id: st
   const db = getDb();
   const row = (db[collection] as { id: string }[]).find((r) => r.id === id);
   if (!row) throw new Error('رکورد موردنظر یافت نشد.');
-  Object.assign(row, stripImmutable(b), collection === 'layers' || collection === 'people' ? { updatedAt: nowIso() } : {});
+  const flat = stripImmutable(b);
+  if (flat.referenceLinks && typeof flat.referenceLinks !== 'string') flat.referenceLinks = JSON.stringify(flat.referenceLinks);
+  Object.assign(row, flat, collection === 'layers' || collection === 'people' ? { updatedAt: nowIso() } : {});
   commit();
   return row;
 }
@@ -815,6 +820,7 @@ function updateStory(id: string, b: Body) {
   const story = db.stories.find((s) => s.id === id);
   if (!story) throw new Error('داستان موردنظر یافت نشد.');
   const { placeIds, ...fields } = stripImmutable(b);
+  if (fields.referenceLinks && typeof fields.referenceLinks !== 'string') fields.referenceLinks = JSON.stringify(fields.referenceLinks);
   Object.assign(story, fields);
   if (Array.isArray(placeIds)) setStoryPlaces(id, placeIds);
   commit();

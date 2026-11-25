@@ -30,14 +30,24 @@ import {
   PlaceRecord,
   PublicMapBundle,
 } from '../types';
+import type { AudioItem, PhotoItem, ReferenceItem, VideoItem } from '../types';
+import { PLACE_STATUS_OPTIONS } from '../types';
 import { AVAILABLE_LAYER_ICONS, LayerIcon } from './LayerIcon';
 import { BarzokMapCanvas } from './BarzokMapCanvas';
 import { PublishBar } from './PublishBar';
-import { WordPressPicker } from './WordPressPicker';
+import { useHostAuth } from '../utils/hostAuth';
+import { ReferencesEditor, VideoListEditor, WpMediaListEditor } from './MediaListEditor';
 import { ShapeEditor, ShapeKind, LatLng, centroidOf } from './ShapeEditor';
 import { NEIGHBOURHOOD_LAYER_ID } from '../utils/neighbourhood';
 
-const stripTags = (t: string) => t.replace(/<[^>]*>/g, '').trim();
+const parseArr = <T,>(v: unknown): T[] => {
+  try {
+    const x = typeof v === 'string' ? JSON.parse(v) : v;
+    return Array.isArray(x) ? (x as T[]) : [];
+  } catch {
+    return [];
+  }
+};
 
 interface AdminDashboardProps {
   lang: Language;
@@ -71,6 +81,11 @@ export function AdminDashboard({
     logout,
     authError,
   } = useAuth();
+  const hostAuth = useHostAuth();
+  useEffect(() => {
+    if (hostAuth?.mode === 'wordpress' && hostAuth.canEdit && !user) enterPreviewAdmin();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hostAuth, user]);
   const [activeTab, setActiveTab] = useState<AdminTab>('layers');
   const [adminData, setAdminData] = useState<AdminBundle | null>(null);
   const [loading, setLoading] = useState(false);
@@ -103,11 +118,10 @@ export function AdminDashboard({
   const [placeFullDescFa, setPlaceFullDescFa] = useState('');
   const [placeHistoricalInfoFa, setPlaceHistoricalInfoFa] = useState('');
   const [placeCurrentStatusFa, setPlaceCurrentStatusFa] = useState('');
-  const [placePhotoUrl, setPlacePhotoUrl] = useState('');
-  const [placePhotoCaption, setPlacePhotoCaption] = useState('');
-  const [placeAudioUrl, setPlaceAudioUrl] = useState('');
-  const [placeVideoUrl, setPlaceVideoUrl] = useState('');
-  const [placeSourceRef, setPlaceSourceRef] = useState('');
+  const [placePhotos, setPlacePhotos] = useState<PhotoItem[]>([]);
+  const [placeAudios, setPlaceAudios] = useState<AudioItem[]>([]);
+  const [placeVideos, setPlaceVideos] = useState<VideoItem[]>([]);
+  const [placeRefs, setPlaceRefs] = useState<ReferenceItem[]>([]);
   const [placeDocDate, setPlaceDocDate] = useState('۱۴۰۵');
   const [placePubStatus, setPlacePubStatus] = useState<'published' | 'draft'>('published');
   const [placeVerStatus, setPlaceVerStatus] = useState<'verified' | 'community' | 'demo'>('verified');
@@ -118,7 +132,6 @@ export function AdminDashboard({
   const [placeShape, setPlaceShape] = useState<ShapeKind>('point');
   const [placeGeo, setPlaceGeo] = useState<LatLng[]>([]);
   const [placeShapeColor, setPlaceShapeColor] = useState('');
-  const [wpPicker, setWpPicker] = useState<null | 'image' | 'audio'>(null);
   const wpBase = (() => {
     try {
       return window.localStorage.getItem('barzok:wpBase') || window.location.origin;
@@ -140,6 +153,7 @@ export function AdminDashboard({
   const [storySummaryFa, setStorySummaryFa] = useState('');
   const [storyContentFa, setStoryContentFa] = useState('');
   const [storyNarrator, setStoryNarrator] = useState('');
+  const [storyRefs, setStoryRefs] = useState<ReferenceItem[]>([]);
 
   // Event Form State
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
@@ -147,6 +161,7 @@ export function AdminDashboard({
   const [eventSeasonFa, setEventSeasonFa] = useState('');
   const [eventDescFa, setEventDescFa] = useState('');
   const [eventPlaceId, setEventPlaceId] = useState('');
+  const [eventRefs, setEventRefs] = useState<ReferenceItem[]>([]);
 
   // Route Form State
   const [editingRouteId, setEditingRouteId] = useState<string | null>(null);
@@ -186,11 +201,10 @@ export function AdminDashboard({
     setPlaceFullDescFa('');
     setPlaceHistoricalInfoFa('');
     setPlaceCurrentStatusFa('');
-    setPlacePhotoUrl('');
-    setPlacePhotoCaption('');
-    setPlaceAudioUrl('');
-    setPlaceVideoUrl('');
-    setPlaceSourceRef('');
+    setPlacePhotos([]);
+    setPlaceAudios([]);
+    setPlaceVideos([]);
+    setPlaceRefs([]);
     setPlacePubStatus('published');
     setPlaceVerStatus('verified');
     setPlaceSelectedPeople([]);
@@ -214,6 +228,7 @@ export function AdminDashboard({
     setStorySummaryFa('');
     setStoryContentFa('');
     setStoryNarrator('');
+    setStoryRefs([]);
   };
   const resetEventForm = () => {
     setEditingEventId(null);
@@ -221,6 +236,7 @@ export function AdminDashboard({
     setEventSeasonFa('');
     setEventDescFa('');
     setEventPlaceId('');
+    setEventRefs([]);
   };
   const resetRouteForm = () => {
     setEditingRouteId(null);
@@ -394,16 +410,6 @@ export function AdminDashboard({
     e.preventDefault();
     setStatusMessage(null);
     try {
-      const existing = editingPlaceId ? publicBundle.places.find((x) => x.id === editingPlaceId) : null;
-      const oldPhotos: any[] = !existing
-        ? []
-        : typeof existing.recentPhotos === 'string'
-          ? JSON.parse(existing.recentPhotos)
-          : existing.recentPhotos || [];
-      const firstPhoto = { url: placePhotoUrl, captionFa: placePhotoCaption || placeNameFa, year: placeDocDate };
-      // replace only the first photo; keep the rest of the album untouched
-      const recentPhotos = placePhotoUrl ? [firstPhoto, ...oldPhotos.slice(1)] : oldPhotos.slice(1);
-
       const minPts = placeShape === 'polygon' ? 3 : 2;
       if (placeShape !== 'point' && placeGeo.length < minPts) {
         setStatusMessage({
@@ -423,13 +429,7 @@ export function AdminDashboard({
               color: shapeColor,
               ...(placeShape === 'polygon' ? { fillOpacity: 0.25 } : {}),
             };
-      const audioRecordings = placeAudioUrl
-        ? [{ url: placeAudioUrl, titleFa: `روایت صوتی ${placeNameFa}` }]
-        : [];
-      const videoLinks = placeVideoUrl
-        ? [{ url: placeVideoUrl, titleFa: `ویدیوی ${placeNameFa}` }]
-        : [];
-
+      const cleanRefs = placeRefs.filter((r) => r.title.trim() || (r.url || '').trim()).map((r) => ({ ...r, title: r.title.trim(), url: (r.url || '').trim() }));
       const payload = {
         layerId: placeLayerId || null,
         nameFa: placeNameFa,
@@ -444,10 +444,10 @@ export function AdminDashboard({
         neighbourhoodId: placeHoodId || null,
         historicalInfoFa: placeHistoricalInfoFa || null,
         currentStatusFa: placeCurrentStatusFa || null,
-        recentPhotos,
-        audioRecordings: placeAudioUrl ? audioRecordings : undefined,
-        videoLinks: placeVideoUrl ? videoLinks : undefined,
-        sourceReference: placeSourceRef || null,
+        recentPhotos: placePhotos,
+        audioRecordings: placeAudios,
+        videoLinks: placeVideos,
+        referenceLinks: cleanRefs,
         documentationDate: placeDocDate || null,
         publicationStatus: placePubStatus,
         verificationStatus: placeVerStatus,
@@ -491,7 +491,6 @@ export function AdminDashboard({
     setPlaceFullDescFa(p.fullDescriptionFa);
     setPlaceHistoricalInfoFa(p.historicalInfoFa || '');
     setPlaceCurrentStatusFa(p.currentStatusFa || '');
-    setPlaceSourceRef(p.sourceReference || '');
     setPlaceDocDate(p.documentationDate || '');
     setPlacePubStatus(p.publicationStatus === 'draft' ? 'draft' : 'published');
     setPlaceVerStatus(p.verificationStatus);
@@ -506,39 +505,10 @@ export function AdminDashboard({
       setPlaceShapeColor('');
     }
 
-    // Populate media fields if present on the place record
-    try {
-      const recentArr =
-        typeof p.recentPhotos === 'string' ? JSON.parse(p.recentPhotos) : p.recentPhotos || [];
-      const histArr =
-        typeof p.historicalPhotos === 'string'
-          ? JSON.parse(p.historicalPhotos)
-          : p.historicalPhotos || [];
-      const firstPhoto = recentArr[0] || histArr[0];
-      setPlacePhotoUrl(firstPhoto?.url || '');
-      setPlacePhotoCaption(firstPhoto?.captionFa || '');
-    } catch {
-      setPlacePhotoUrl('');
-      setPlacePhotoCaption('');
-    }
-
-    try {
-      const audioArr =
-        typeof p.audioRecordings === 'string'
-          ? JSON.parse(p.audioRecordings)
-          : p.audioRecordings || [];
-      setPlaceAudioUrl(audioArr[0]?.url || '');
-    } catch {
-      setPlaceAudioUrl('');
-    }
-
-    try {
-      const videoArr =
-        typeof p.videoLinks === 'string' ? JSON.parse(p.videoLinks) : p.videoLinks || [];
-      setPlaceVideoUrl(videoArr[0]?.url || '');
-    } catch {
-      setPlaceVideoUrl('');
-    }
+    setPlacePhotos(parseArr<PhotoItem>(p.recentPhotos));
+    setPlaceAudios(parseArr<AudioItem>(p.audioRecordings));
+    setPlaceVideos(parseArr<VideoItem>(p.videoLinks));
+    setPlaceRefs(parseArr<ReferenceItem>(p.referenceLinks));
 
     // Populate linked people & stories
     const allPP = adminData?.placePeople || publicBundle.placePeople || [];
@@ -634,7 +604,37 @@ export function AdminDashboard({
       </header>
 
       {/* Authentication Gate */}
-      {!user ? (
+      {!user && hostAuth?.mode === 'wordpress' ? (
+        <div className="flex-1 flex items-center justify-center p-6">
+          <div className="w-full max-w-md bg-white border border-[#806B50]/25 rounded-xl p-8 shadow-sm text-center space-y-4" data-testid="wp-gate">
+            <div className="w-12 h-12 rounded-full bg-[#254B36]/10 text-[#254B36] flex items-center justify-center mx-auto">
+              <ShieldAlert className="w-6 h-6" />
+            </div>
+            <h1 className="text-lg font-bold text-[#1C1917]">ویرایش نقشه فقط برای مدیران سایت است</h1>
+            <p className="text-xs text-[#57534E] leading-relaxed">
+              {hostAuth.loggedIn
+                ? 'حساب وردپرس شما اجازهٔ ویرایش ندارد. با مدیر سایت صحبت کنید.'
+                : 'ابتدا با حساب وردپرس خود وارد سایت شوید، سپس همین صفحه را دوباره باز کنید.'}
+            </p>
+            {hostAuth.error && <p className="text-[11px] text-red-700">{hostAuth.error}</p>}
+            {!hostAuth.loggedIn && hostAuth.loginUrl && (
+              <a
+                href={`${hostAuth.loginUrl}${hostAuth.loginUrl.includes('?') ? '&' : '?'}redirect_to=${encodeURIComponent(window.location.href)}`}
+                className="inline-block px-5 py-2.5 rounded-lg bg-[#254B36] text-[#F5F2E9] text-sm font-medium"
+              >
+                ورود به وردپرس
+              </a>
+            )}
+            <div>
+              <button type="button" onClick={onExitAdmin} className="text-xs text-[#806B50] underline">
+                بازگشت به نقشه
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : !user && hostAuth === undefined ? (
+        <div className="flex-1 flex items-center justify-center text-xs text-[#806B50]">در حال بررسی ورود…</div>
+      ) : !user ? (
         <div className="flex-1 flex items-center justify-center p-6">
           <div className="w-full max-w-md bg-white border border-[#806B50]/25 rounded-xl p-8 shadow-sm text-center space-y-5">
             <div className="w-12 h-12 rounded-full bg-[#254B36]/10 text-[#254B36] flex items-center justify-center mx-auto">
@@ -1201,80 +1201,28 @@ export function AdminDashboard({
                     <label className="block text-xs font-semibold mb-1">
                       {lang === 'fa' ? 'وضعیت کنونی (اختیاری)' : 'Current Status'}
                     </label>
-                    <input
-                      type="text"
-                      placeholder="مثلاً: فعال و دایر / نیازمند مرمت"
+                    <select
                       value={placeCurrentStatusFa}
                       onChange={(e) => setPlaceCurrentStatusFa(e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg border border-[#806B50]/30 text-sm"
-                    />
-                  </div>
-                </div>
-
-                {/* Photo: from the WordPress media library only */}
-                <div className="p-3.5 rounded-lg bg-[#EBE6DF]/50 border border-[#806B50]/20 space-y-2.5">
-                  <label className="block text-xs font-semibold text-[#1C1917]">تصویر مکان (از آلبوم عکس وردپرس)</label>
-                  <div className="flex items-center gap-3 flex-wrap">
-                    {placePhotoUrl && <img src={placePhotoUrl} alt="" className="w-16 h-16 rounded-lg object-cover border border-[#806B50]/30" />}
-                    <button type="button" onClick={() => setWpPicker('image')} className="px-3 py-1.5 rounded-lg bg-[#254B36] text-[#F5F2E9] text-xs font-medium hover:bg-[#1d3b2a]">
-                      📁 {placePhotoUrl ? 'تغییر عکس' : 'انتخاب یا آپلود عکس از آلبوم وردپرس'}
-                    </button>
-                    {placePhotoUrl && (
-                      <button type="button" onClick={() => { setPlacePhotoUrl(''); setPlacePhotoCaption(''); }} className="px-2.5 py-1 rounded bg-white border border-red-300 text-red-700 text-[11px]">
-                        حذف عکس
-                      </button>
-                    )}
-                  </div>
-                  {placePhotoUrl && (
-                    <input type="text" value={placePhotoCaption} onChange={(e) => setPlacePhotoCaption(e.target.value)} placeholder="توضیح زیرنویس عکس (اختیاری)" className="w-full px-3 py-1.5 rounded-lg bg-white border border-[#806B50]/30 text-xs" />
-                  )}
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold mb-1">فایل صوتی (از وردپرس)</label>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <button type="button" onClick={() => setWpPicker('audio')} className="px-3 py-1.5 rounded-lg bg-[#254B36] text-[#F5F2E9] text-xs font-medium">
-                        🎧 {placeAudioUrl ? 'تغییر صدا' : 'انتخاب یا آپلود صدا'}
-                      </button>
-                      {placeAudioUrl && (
-                        <button type="button" onClick={() => setPlaceAudioUrl('')} className="px-2.5 py-1 rounded bg-white border border-red-300 text-red-700 text-[11px]">حذف</button>
+                      className="w-full px-3 py-2 rounded-lg border border-[#806B50]/30 text-sm bg-white"
+                    >
+                      <option value="">نامشخص</option>
+                      {PLACE_STATUS_OPTIONS.map((o) => (
+                        <option key={o} value={o}>
+                          {o}
+                        </option>
+                      ))}
+                      {placeCurrentStatusFa && !(PLACE_STATUS_OPTIONS as readonly string[]).includes(placeCurrentStatusFa) && (
+                        <option value={placeCurrentStatusFa}>{placeCurrentStatusFa}</option>
                       )}
-                    </div>
-                    {placeAudioUrl && <audio controls preload="none" src={placeAudioUrl} className="w-full h-8 mt-1.5" />}
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold mb-1">
-                      {lang === 'fa' ? 'پیوند ویدیو (آپارات یا یوتیوب)' : 'Video URL'}
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="https://www.aparat.com/v/..."
-                      value={placeVideoUrl}
-                      onChange={(e) => setPlaceVideoUrl(e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg border border-[#806B50]/30 text-xs font-mono-num"
-                    />
+                    </select>
                   </div>
                 </div>
 
-                {wpPicker && (
-                  <WordPressPicker
-                    kind={wpPicker}
-                    wpBase={wpBase}
-                    multiple={false}
-                    onClose={() => setWpPicker(null)}
-                    onPick={(items) => {
-                      const it = items[0];
-                      if (it) {
-                        if (wpPicker === 'image') {
-                          setPlacePhotoUrl(it.source_url);
-                          if (!placePhotoCaption) setPlacePhotoCaption(stripTags(it.title?.rendered || ''));
-                        } else setPlaceAudioUrl(it.source_url);
-                      }
-                      setWpPicker(null);
-                    }}
-                  />
-                )}
+                <WpMediaListEditor kind="image" wpBase={wpBase} photos={placePhotos} onPhotos={setPlacePhotos} />
+                <WpMediaListEditor kind="audio" wpBase={wpBase} audios={placeAudios} onAudios={setPlaceAudios} />
+                <VideoListEditor videos={placeVideos} onChange={setPlaceVideos} />
+                <ReferencesEditor refs={placeRefs} onChange={setPlaceRefs} />
 
                 {/* Connect Location to People & Stories */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1359,18 +1307,7 @@ export function AdminDashboard({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold mb-1">
-                      {lang === 'fa' ? 'منبع / ارجاع' : 'Source'}
-                    </label>
-                    <input
-                      type="text"
-                      value={placeSourceRef}
-                      onChange={(e) => setPlaceSourceRef(e.target.value)}
-                      className="w-full px-2.5 py-2 rounded-lg border border-[#806B50]/30 text-xs"
-                    />
-                  </div>
+                <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-semibold mb-1">
                       {lang === 'fa' ? 'وضعیت انتشار' : 'Publication'}
@@ -1661,6 +1598,7 @@ export function AdminDashboard({
                           summaryFa: storySummaryFa || storyTitleFa,
                           contentFa: storyContentFa,
                           narratorName: storyNarrator || null,
+                          referenceLinks: storyRefs,
                         }),
                       });
                       setStatusMessage({ type: 'success', text: 'داستان با موفقیت ویرایش شد.' });
@@ -1672,6 +1610,7 @@ export function AdminDashboard({
                           summaryFa: storySummaryFa || storyTitleFa,
                           contentFa: storyContentFa,
                           narratorName: storyNarrator || null,
+                          referenceLinks: storyRefs,
                           publicationStatus: 'published',
                           verificationStatus: 'verified',
                           isDemo: false,
@@ -1684,6 +1623,7 @@ export function AdminDashboard({
                     setStorySummaryFa('');
                     setStoryContentFa('');
                     setStoryNarrator('');
+                    setStoryRefs([]);
                     await fetchAdminData();
                     await onRefreshPublic();
                   } catch (err: any) {
@@ -1741,6 +1681,7 @@ export function AdminDashboard({
                     className="w-full px-3 py-2 rounded-lg border border-[#806B50]/30 text-sm"
                   />
                 </div>
+                <ReferencesEditor refs={storyRefs} onChange={setStoryRefs} />
                 <button
                   type="submit"
                   className="px-5 py-2.5 rounded-lg bg-[#254B36] text-[#F5F2E9] text-xs font-medium hover:bg-[#1d3b2a] transition-colors"
@@ -1779,6 +1720,7 @@ export function AdminDashboard({
                           setStorySummaryFa(st.summaryFa);
                           setStoryContentFa(st.contentFa);
                           setStoryNarrator(st.narratorName || '');
+                          setStoryRefs(parseArr<ReferenceItem>(st.referenceLinks));
                           window.scrollTo({ top: 0, behavior: 'smooth' });
                         }}
                         className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#EBE6DF] hover:bg-[#D6CEBE] text-xs font-medium text-[#1C1917]"
@@ -1819,6 +1761,7 @@ export function AdminDashboard({
                           seasonOrDateFa: eventSeasonFa,
                           descriptionFa: eventDescFa,
                           placeId: eventPlaceId || null,
+                          referenceLinks: eventRefs,
                         }),
                       });
                       setStatusMessage({ type: 'success', text: 'رویداد فرهنگی با موفقیت ویرایش شد.' });
@@ -1830,6 +1773,7 @@ export function AdminDashboard({
                           seasonOrDateFa: eventSeasonFa,
                           descriptionFa: eventDescFa,
                           placeId: eventPlaceId || null,
+                          referenceLinks: eventRefs,
                         }),
                       });
                       setStatusMessage({ type: 'success', text: 'رویداد فرهنگی ثبت شد.' });
@@ -1839,6 +1783,7 @@ export function AdminDashboard({
                     setEventSeasonFa('');
                     setEventDescFa('');
                     setEventPlaceId('');
+                    setEventRefs([]);
                     await fetchAdminData();
                     await onRefreshPublic();
                   } catch (err: any) {
@@ -1899,6 +1844,7 @@ export function AdminDashboard({
                     className="w-full px-3 py-2 rounded-lg border border-[#806B50]/30 text-sm"
                   />
                 </div>
+                <ReferencesEditor refs={eventRefs} onChange={setEventRefs} />
                 <button
                   type="submit"
                   className="px-5 py-2.5 rounded-lg bg-[#254B36] text-[#F5F2E9] text-xs font-medium hover:bg-[#1d3b2a] transition-colors"
@@ -1931,6 +1877,7 @@ export function AdminDashboard({
                           setEventSeasonFa(ev.seasonOrDateFa);
                           setEventDescFa(ev.descriptionFa);
                           setEventPlaceId(ev.placeId || '');
+                          setEventRefs(parseArr<ReferenceItem>(ev.referenceLinks));
                           window.scrollTo({ top: 0, behavior: 'smooth' });
                         }}
                         className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#EBE6DF] hover:bg-[#D6CEBE] text-xs font-medium text-[#1C1917]"

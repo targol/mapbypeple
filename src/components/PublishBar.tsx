@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { SAVE_HEADERS, useHostAuth } from '../utils/hostAuth';
 import { discardLocalEdits, getPublishSnapshot, isDirty, markPublished } from '../data/localBackend';
 
 const get = (k: string) => {
@@ -11,6 +12,8 @@ const get = (k: string) => {
 
 /** Admin edits live in this browser until published; this writes them to data.json on the host. */
 export function PublishBar() {
+  const host = useHostAuth();
+  const wp = host?.mode === 'wordpress';
   const [dirty, setDirtyState] = useState(isDirty());
   const [pw, setPw] = useState(() => get('barzok:mediaPw'));
   const [busy, setBusy] = useState(false);
@@ -28,8 +31,9 @@ export function PublishBar() {
     try {
       const res = await fetch('./save-data.php', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: pw, target: 'data', data: getPublishSnapshot() }),
+        headers: SAVE_HEADERS,
+        credentials: 'same-origin',
+        body: JSON.stringify({ password: wp ? undefined : pw, target: 'data', data: getPublishSnapshot() }),
       });
       const j = await res.json().catch(() => ({}));
       if (!res.ok || j.ok === false) throw new Error(j.error || `HTTP ${res.status}`);
@@ -55,15 +59,19 @@ export function PublishBar() {
       data-testid="publish-bar"
     >
       <span className="font-semibold">{dirty ? 'تغییرات ذخیره‌نشده روی هاست (فقط در این مرورگر)' : 'همه‌ی تغییرات منتشر شده است'}</span>
-      <input
-        type="password"
-        dir="ltr"
-        value={pw}
-        onChange={(e) => setPw(e.target.value)}
-        placeholder="رمز save-data.php"
-        className="px-2 py-1.5 rounded border border-[#806B50]/30 bg-white w-40"
-      />
-      <button type="button" disabled={!dirty || !pw || busy} onClick={publish} className="px-3 py-1.5 rounded-lg bg-[#254B36] text-[#F5F2E9] font-semibold disabled:opacity-40">
+      {wp ? (
+        <span className="text-[#57534E]">وارد شده با حساب وردپرس{host?.name ? `: ${host.name}` : ''}</span>
+      ) : (
+        <input
+          type="password"
+          dir="ltr"
+          value={pw}
+          onChange={(e) => setPw(e.target.value)}
+          placeholder="رمز save-data.php"
+          className="px-2 py-1.5 rounded border border-[#806B50]/30 bg-white w-40"
+        />
+      )}
+      <button type="button" disabled={!dirty || (!wp && !pw) || busy} onClick={publish} className="px-3 py-1.5 rounded-lg bg-[#254B36] text-[#F5F2E9] font-semibold disabled:opacity-40">
         {busy ? 'در حال انتشار…' : 'انتشار روی هاست'}
       </button>
       {dirty && (

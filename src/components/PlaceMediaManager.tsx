@@ -3,6 +3,7 @@ import { AudioLines, Download, Film, Image as ImageIcon, Plus, Save, Search, Tra
 import type { AudioItem, Language, PhotoItem, PlaceRecord, VideoItem } from '../types';
 import { fetchHostedJson, MediaManifest, PlaceMedia } from '../utils/hostedMedia';
 import { WordPressPicker } from './WordPressPicker';
+import { SAVE_HEADERS, useHostAuth } from '../utils/hostAuth';
 
 const stripHtml = (s: string) => s.replace(/<[^>]*>/g, '').replace(/&amp;/g, '&').trim();
 const guessKind = (url: string): 'photo' | 'audio' | 'other' =>
@@ -33,6 +34,8 @@ export function PlaceMediaManager({ lang, places }: { lang: Language; places: Pl
   const [placeId, setPlaceId] = useState<string | null>(null);
   const [picker, setPicker] = useState<null | 'image' | 'audio'>(null);
   const [wpBase, setWpBase] = useState(() => store.get('barzok:wpBase', window.location.origin));
+  const host = useHostAuth();
+  const wp = host?.mode === 'wordpress';
   const [password, setPassword] = useState(() => store.get('barzok:mediaPw'));
   const [manualUrl, setManualUrl] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
@@ -119,8 +122,9 @@ export function PlaceMediaManager({ lang, places }: { lang: Language; places: Pl
     try {
       const res = await fetch('save-data.php', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password, target: 'media', media }),
+        headers: SAVE_HEADERS,
+        credentials: 'same-origin',
+        body: JSON.stringify({ password: wp ? undefined : password, target: 'media', media }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.ok) throw new Error(data.error || `HTTP ${res.status}`);
@@ -168,10 +172,10 @@ export function PlaceMediaManager({ lang, places }: { lang: Language; places: Pl
               className={`${inp} w-full`}
             />
           </label>
-          <label className="space-y-1">
+          {!wp && <label className="space-y-1">
             <span className="block text-[11px] text-[#806B50]">رمز ذخیره (همان که در save-data.php گذاشتید)</span>
             <input type="password" dir="ltr" value={password} onChange={(e) => setPassword(e.target.value)} className={`${inp} w-full`} />
-          </label>
+          </label>}
         </div>
       </div>
 
@@ -307,7 +311,7 @@ export function PlaceMediaManager({ lang, places }: { lang: Language; places: Pl
       </div>
 
       <div className="sticky bottom-0 flex flex-wrap items-center gap-3 p-3 rounded-xl bg-[#F5F2E9] border border-[#806B50]/30 shadow-lg">
-        <button type="button" onClick={save} disabled={!loaded || !dirty || !password} className="px-4 py-2 rounded-lg bg-[#254B36] text-[#F5F2E9] text-xs font-semibold flex items-center gap-1.5 disabled:opacity-40">
+        <button type="button" onClick={save} disabled={!loaded || !dirty || (!wp && !password)} className="px-4 py-2 rounded-lg bg-[#254B36] text-[#F5F2E9] text-xs font-semibold flex items-center gap-1.5 disabled:opacity-40">
           <Save className="w-4 h-4" /> ذخیره روی هاست
         </button>
         <button type="button" onClick={download} className="px-3 py-2 rounded-lg bg-[#EBE6DF] text-xs font-semibold flex items-center gap-1.5">
