@@ -255,4 +255,4 @@ export interface ReferenceItem {
 
 export const PLACE_STATUS_OPTIONS = ['فعال', 'نیازمند مرمت', 'تخریب‌شده', 'تغییر کاربری‌یافته'] as const;
 
-export const ORG_TAG_FA = 'مستندسازی: اقامتگاه برزک';
+export const ORG_TAG_FA = 'مستندسازی: خانه برزک';
