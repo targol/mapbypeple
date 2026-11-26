@@ -380,132 +380,66 @@ function BarzokAppContent() {
   const iframeSnippet = `<iframe src="${embedUrl}" width="100%" height="680" style="border:0; border-radius: 12px; overflow: hidden;" allow="geolocation" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="مردمنگار برزک | Barzok People Map"></iframe>`;
 
   return (
-    <div className={`${isEmbedMode ? 'h-screen overflow-hidden' : 'min-h-screen'} flex flex-col bg-[#F5F2E9] text-[#1C1917]`}>
-      {/* Strict 3-Zone Top Bar Contract (frontend-design §2) */}
-      <header className={`${isEmbedMode ? 'md:hidden ' : ''}flex items-center justify-between gap-8 px-6 py-3.5 bg-[#F5F2E9] border-b border-[#806B50]/25 shrink-0 z-30`}>
-        {/* Zone 1: Single text element wordmark */}
-        {!isEmbedMode && (
-        <a
-          href="?"
-          onClick={(e) => {
-            e.preventDefault();
-            navigateToSection('map');
-          }}
-          className="text-xl font-bold tracking-tight text-[#254B36] whitespace-nowrap shrink-0"
-        >
-          {lang === 'fa' ? 'نقشه مردم‌نگار برزک' : 'Barzok People Map'}
-        </a>
-        )}
-
-        {/* Zone 2: 4–5 concise single-line text navigation links */}
-        <nav className="hidden items-center gap-7 text-sm font-medium text-[#57534E]">
-          <button
-            type="button"
-            onClick={() => navigateToSection('map')}
-            className={`hover:text-[#254B36] transition-colors whitespace-nowrap shrink-0 ${
-              activeSection === 'map'
-                ? 'text-[#254B36] font-semibold underline underline-offset-8 decoration-[#D6A83F] decoration-2'
-                : ''
-            }`}
+    <div className="h-dvh overflow-hidden flex flex-col bg-[#F5F2E9] text-[#1C1917]">
+      {/* Header: title + subtitle on one line, actions on the other side */}
+      <header className="flex items-center justify-between gap-3 px-4 py-2 bg-[#F5F2E9] border-b border-[#806B50]/25 shrink-0 z-30">
+        <div className="flex items-baseline gap-x-3 min-w-0 flex-wrap">
+          <a
+            href="?"
+            onClick={(e) => {
+              e.preventDefault();
+              navigateToSection('map');
+            }}
+            className="text-lg font-bold tracking-tight text-[#254B36] whitespace-nowrap"
           >
-            {lang === 'fa' ? 'نقشه' : 'Map'}
-          </button>
-          <button
-            type="button"
-            onClick={() => navigateToSection('stories')}
-            className={`hover:text-[#254B36] transition-colors whitespace-nowrap shrink-0 ${
-              activeSection === 'stories'
-                ? 'text-[#254B36] font-semibold underline underline-offset-8 decoration-[#D6A83F] decoration-2'
-                : ''
-            }`}
-          >
-            {lang === 'fa' ? 'داستان‌ها' : 'Stories'}
-          </button>
-          <button
-            type="button"
-            onClick={() => navigateToSection('people')}
-            className={`hover:text-[#254B36] transition-colors whitespace-nowrap shrink-0 ${
-              activeSection === 'people'
-                ? 'text-[#254B36] font-semibold underline underline-offset-8 decoration-[#D6A83F] decoration-2'
-                : ''
-            }`}
-          >
-            {lang === 'fa' ? 'مردم و مشاغل' : 'People & Crafts'}
-          </button>
+            {lang === 'fa' ? 'نقشه مردم‌نگار برزک' : 'Barzok People Map'}
+          </a>
+          <span className="hidden sm:inline text-[11px] text-[#57534E] truncate">
+            {lang === 'fa'
+              ? 'نگاشتی زنده از زندگی، فرهنگ، آیین‌ها و خاطرات مردم برزک'
+              : 'A living map of the life, culture, rituals and memories of Barzok'}
+          </span>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
           <button
             type="button"
             onClick={() => setLang((prev) => (prev === 'fa' ? 'en' : 'fa'))}
-            className="hover:text-[#254B36] transition-colors whitespace-nowrap shrink-0 text-xs font-mono-num"
+            className="px-2 py-1.5 text-xs font-mono-num rounded-lg border border-[#806B50]/30 hover:bg-[#EBE6DF]"
           >
-            {lang === 'fa' ? 'EN / فارسی' : 'فارسی / EN'}
+            {lang === 'fa' ? 'EN' : 'فارسی'}
           </button>
-        </nav>
-
-        {/* Zone 3: 1 primary action */}
-        <div className="flex items-center gap-3 shrink-0">
           {isEmbedMode && hostAuth?.canEdit && (
-            <a href="?admin=1" target="_blank" rel="noopener noreferrer" className="px-3 py-2 text-xs font-semibold text-[#254B36] border border-[#254B36] rounded-lg whitespace-nowrap">
-              ✎ ویرایش نقشه
+            <a href="?admin=1" target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 text-xs font-semibold text-[#254B36] border border-[#254B36] rounded-lg whitespace-nowrap">
+              ✎ {lang === 'fa' ? 'ویرایش' : 'Edit'}
             </a>
+          )}
+          {!isEmbedMode && showAdminLink && (
+            <button type="button" onClick={() => navigateToSection('admin')} className="px-3 py-1.5 text-xs font-semibold text-[#254B36] border border-[#254B36] rounded-lg whitespace-nowrap">
+              ✎ {lang === 'fa' ? 'ویرایش' : 'Edit'}
+            </button>
           )}
           <button
             type="button"
             onClick={() => setContributionOpen(true)}
-            className="px-4 py-2 text-xs font-medium text-[#F5F2E9] bg-[#254B36] rounded-lg hover:bg-[#1d3b2a] transition-colors whitespace-nowrap shrink-0"
+            className="px-3 py-1.5 text-xs font-medium text-[#F5F2E9] bg-[#254B36] rounded-lg hover:bg-[#1d3b2a] whitespace-nowrap"
           >
             {lang === 'fa' ? 'ثبت مشارکت مردمی' : 'Contribute Memory'}
           </button>
         </div>
       </header>
 
-      {/* Subtitle & Workspace Control Strip below the fold/header */}
-      {!isEmbedMode && <div className="px-4 py-1.5 bg-[#EBE6DF]/80 border-b border-[#806B50]/20 flex items-center justify-between gap-4 flex-wrap text-xs">
-        <div className="flex items-center gap-3 text-[#57534E]">
-          <span className="font-medium text-[#1C1917]">
-            {lang === 'fa'
-              ? 'نگاشتی زنده از زندگی، فرهنگ، آیین‌ها و خاطرات مردم برزک'
-              : 'A living map of the life, culture, rituals and memories of Barzok'}
-          </span>
-          {hasDemoRecords && (
-            <>
-              <span aria-hidden="true">·</span>
-              <span className="text-[#806B50] flex items-center gap-1">
-                <AlertTriangle className="w-3.5 h-3.5 text-[#D6A83F]" />
-                {lang === 'fa'
-                  ? 'حالت نمایشی (شامل رکوردهای نمونه آزمایشی — قابل مدیریت در پنل مدیر)'
-                  : 'Demo Mode Active (Sample records clearly labeled — manageable in /admin)'}
-              </span>
-            </>
-          )}
-        </div>
-
-        {/* Mobile Nav + Discreet Admin Link */}
-        <div className="flex items-center gap-4">
-          <div className="flex md:hidden items-center gap-3 text-xs font-medium">
-            <button type="button" onClick={() => navigateToSection('map')}>
-              {lang === 'fa' ? 'نقشه' : 'Map'}
-            </button>
-            <button type="button" onClick={() => navigateToSection('stories')}>
-              {lang === 'fa' ? 'داستان‌ها' : 'Stories'}
-            </button>
-            <button
-              type="button"
-              onClick={() => setLang((prev) => (prev === 'fa' ? 'en' : 'fa'))}
-            >
-              {lang === 'fa' ? 'EN' : 'فا'}
-            </button>
-          </div>
-          {showAdminLink && (
-<button
-            type="button"
-            onClick={() => navigateToSection('admin')}
-            className="text-xs text-[#806B50] hover:text-[#254B36] transition-colors whitespace-nowrap"
-          >
-            {lang === 'fa' ? 'ورود مدیران (/admin)' : 'Admin Login (/admin)'}
+      {/* Mobile section switcher (desktop uses the sidebar menu) */}
+      <div className="md:hidden flex items-center gap-4 px-4 py-1.5 bg-[#EBE6DF]/80 border-b border-[#806B50]/20 text-xs font-medium">
+        {([
+          ['map', lang === 'fa' ? 'نقشه' : 'Map'],
+          ['stories', lang === 'fa' ? 'داستان‌ها' : 'Stories'],
+          ['people', lang === 'fa' ? 'مردم و مشاغل' : 'People'],
+        ] as [PublicSection, string][]).map(([k, label]) => (
+          <button key={k} type="button" onClick={() => navigateToSection(k)} className={activeSection === k ? 'text-[#254B36] font-bold underline underline-offset-4 decoration-[#D6A83F]' : ''}>
+            {label}
           </button>
-)}
-        </div>
-      </div>}
+        ))}
+      </div>
 
       {/* Coordinate Picking Banner when user is selecting a point for Community Contribution */}
       {pickingForContribution && (
@@ -530,7 +464,7 @@ function BarzokAppContent() {
 
       {/* SECTION 1: INTERACTIVE MAP & LIST INTERFACE */}
       {(activeSection === 'map' || activeSection === 'stories' || activeSection === 'people') && (
-        <main className={`${activeSection === 'map' ? 'flex' : 'hidden md:flex'} flex-1 flex-col md:flex-row relative overflow-hidden min-h-[calc(100dvh-100px)]`}>
+        <main className={`${activeSection === 'map' ? 'flex' : 'hidden md:flex'} flex-1 min-h-0 flex-col md:flex-row relative overflow-hidden`}>
           {/* Collapsible Layer & Search Sidebar (Desktop) */}
           <div
             className={`hidden md:flex flex-col bg-[#F5F2E9] ${
@@ -540,12 +474,6 @@ function BarzokAppContent() {
             }`}
           >
             <div className="p-3.5 border-b border-[#806B50]/20 flex items-center justify-between">
-              {layerPanelOpen && (
-                <span className="text-sm font-bold text-[#1C1917] flex items-center gap-2">
-                  <Layers className="w-4 h-4 text-[#254B36]" />
-                  <span>{lang === 'fa' ? 'لایه‌های موضوعی و فیلتر' : 'Thematic Layers'}</span>
-                </span>
-              )}
               <button
                 type="button"
                 onClick={() => setLayerPanelOpen((prev) => !prev)}
@@ -561,7 +489,6 @@ function BarzokAppContent() {
                 <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-sm font-medium">
                   {([
                     ['map', lang === 'fa' ? 'نقشه' : 'Map', activeSection === 'map' && viewMode === 'map'],
-                    ['list', lang === 'fa' ? `فهرست (${filteredPlaces.length})` : `List (${filteredPlaces.length})`, activeSection === 'map' && viewMode === 'list'],
                     ['stories', lang === 'fa' ? 'داستان‌ها' : 'Stories', activeSection === 'stories'],
                     ['people', lang === 'fa' ? 'مردم و مشاغل' : 'People & Crafts', activeSection === 'people'],
                   ] as [string, string, boolean][]).map(([k, label, active]) => (
@@ -581,21 +508,6 @@ function BarzokAppContent() {
                     </button>
                   ))}
                 </div>
-                {isEmbedMode && (
-                  <div className="flex flex-wrap items-center gap-2">
-                    <button type="button" onClick={() => setLang((prev) => (prev === 'fa' ? 'en' : 'fa'))} className="text-xs font-mono-num px-2 py-1.5 rounded-lg border border-[#806B50]/30">
-                      {lang === 'fa' ? 'EN' : 'فارسی'}
-                    </button>
-                    <button type="button" onClick={() => setContributionOpen(true)} className="px-3 py-1.5 text-xs font-medium text-[#F5F2E9] bg-[#254B36] rounded-lg">
-                      {lang === 'fa' ? 'ثبت مشارکت مردمی' : 'Contribute Memory'}
-                    </button>
-                    {hostAuth?.canEdit && (
-                      <a href="?admin=1" target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 text-xs font-semibold text-[#254B36] border border-[#254B36] rounded-lg">
-                        ✎ {lang === 'fa' ? 'ویرایش' : 'Edit'}
-                      </a>
-                    )}
-                  </div>
-                )}
               </nav>
             )}
 
@@ -839,7 +751,7 @@ function BarzokAppContent() {
           </div>
 
           {/* Center Map or List Canvas */}
-          <div className="flex-1 relative flex flex-col min-h-[520px]">
+          <div className="flex-1 min-w-0 relative flex flex-col min-h-[320px]">
             {loadError && (
               <div className="p-3 bg-red-50 border-b border-red-200 text-red-800 text-xs text-center">
                 {loadError}
@@ -938,6 +850,39 @@ function BarzokAppContent() {
               </div>
             )}
 
+          {(railStory || railPerson) && (
+              <InfoDrawer
+                lang={lang}
+                story={railStory}
+                person={railPerson}
+                places={railPlaces}
+                onClose={() => {
+                  setRailStory(null);
+                  setRailPerson(null);
+                }}
+                onSelectPlace={(p) => handleSelectPlace(p)}
+              />
+            )}
+
+            {/* Location Detail Panel (Right Drawer on Desktop / Full Sheet on Mobile) */}
+            {selectedPlace && (
+              <LocationDetailPanel
+                lang={lang}
+                place={selectedPlace}
+                layers={bundle.layers}
+                allPlaces={bundle.places}
+                people={bundle.people}
+                stories={bundle.stories}
+                events={bundle.events}
+                placePeople={bundle.placePeople}
+                placeStories={bundle.placeStories}
+                neighbourhood={hoodByPlace[selectedPlace.id] ?? null}
+                onClose={() => handleSelectPlace(null)}
+                onSelectPlace={(p) => handleSelectPlace(p)}
+                onSelectStory={(st) => setSelectedStoryModal(st)}
+              />
+            )}
+
             {/* Mobile Bottom Sheet Trigger Bar (Respects 15% mobile sticky cap) */}
             <div className="md:hidden bg-[#F5F2E9] border-t border-[#806B50]/30 px-4 py-2.5 flex items-center justify-between z-30">
               <button
@@ -1020,44 +965,12 @@ function BarzokAppContent() {
             )}
           </div>
 
-          {(railStory || railPerson) && (
-            <InfoDrawer
-              lang={lang}
-              story={railStory}
-              person={railPerson}
-              places={railPlaces}
-              onClose={() => {
-                setRailStory(null);
-                setRailPerson(null);
-              }}
-              onSelectPlace={(p) => handleSelectPlace(p)}
-            />
-          )}
-
-          {/* Location Detail Panel (Right Drawer on Desktop / Full Sheet on Mobile) */}
-          {selectedPlace && (
-            <LocationDetailPanel
-              lang={lang}
-              place={selectedPlace}
-              layers={bundle.layers}
-              allPlaces={bundle.places}
-              people={bundle.people}
-              stories={bundle.stories}
-              events={bundle.events}
-              placePeople={bundle.placePeople}
-              placeStories={bundle.placeStories}
-              neighbourhood={hoodByPlace[selectedPlace.id] ?? null}
-              onClose={() => handleSelectPlace(null)}
-              onSelectPlace={(p) => handleSelectPlace(p)}
-              onSelectStory={(st) => setSelectedStoryModal(st)}
-            />
-          )}
         </main>
       )}
 
       {/* SECTION 2: STORIES & ORAL HISTORIES ARCHIVE */}
       {activeSection === 'stories' && (
-        <main className="md:hidden flex-1 max-w-5xl w-full mx-auto px-6 py-10 space-y-8">
+        <main className="md:hidden flex-1 overflow-y-auto max-w-5xl w-full mx-auto px-6 py-10 space-y-8">
           <div className="border-b border-[#806B50]/25 pb-5 space-y-2">
             <div className="text-xs tracking-widest uppercase text-[#806B50]">
               {lang === 'fa' ? 'تاریخ شفاهی و روایت‌های برزک' : 'ORAL HISTORIES & ARCHIVAL NARRATIVES'}
@@ -1140,7 +1053,7 @@ function BarzokAppContent() {
 
       {/* SECTION 3: PEOPLE & LOCAL OCCUPATIONS */}
       {activeSection === 'people' && (
-        <main className="md:hidden flex-1 max-w-5xl w-full mx-auto px-6 py-10 space-y-8">
+        <main className="md:hidden flex-1 overflow-y-auto max-w-5xl w-full mx-auto px-6 py-10 space-y-8">
           <div className="border-b border-[#806B50]/25 pb-5 space-y-2">
             <div className="text-xs tracking-widest uppercase text-[#806B50]">
               {lang === 'fa' ? 'مردم‌نگاری مشاغل و پیشه‌وران' : 'LOCAL PEOPLE & TRADITIONAL CRAFTS'}
@@ -1245,28 +1158,7 @@ function BarzokAppContent() {
       )}
 
       {/* Minimal Editorial Footer (Hidden in Map workspace on mobile to preserve full screen map) */}
-      {!isEmbedMode && <footer className="px-6 py-3 bg-[#EBE6DF] border-t border-[#806B50]/20 text-xs text-[#57534E] flex items-center justify-between gap-4 flex-wrap">
-        <span>
-          {lang === 'fa'
-            ? 'مردمنگار برزک — سامانه دیجیتال میراث فرهنگی و مردم‌نگاری برزک کاشان'
-            : 'Barzok People Map — Digital Ethnographic & Cultural Heritage Platform'}
-        </span>
-        <div className="flex items-center gap-4">
-          <a href="?embed=1" target="_blank" rel="noopener noreferrer" className="hover:text-[#254B36]">
-            {lang === 'fa' ? 'نمای جاسازی (embed)' : 'Embed View (embed)'}
-          </a>
-          <span>·</span>
-          {showAdminLink && (
-<button
-            type="button"
-            onClick={() => navigateToSection('admin')}
-            className="hover:text-[#254B36]"
-          >
-            {lang === 'fa' ? 'پنل مدیریت (/admin)' : 'Admin CMS (/admin)'}
-          </button>
-)}
-        </div>
-      </footer>}
+
     </div>
   );
 }
