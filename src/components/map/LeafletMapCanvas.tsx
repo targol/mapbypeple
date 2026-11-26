@@ -281,9 +281,12 @@ export function LeafletMapCanvas({
   onLocateMe,
   followUser = false,
   onFollowChange,
+  showHoods: showHoodsProp,
 }: BarzokMapCanvasProps) {
   const [tileStyle, setTileStyle] = useState<TileStyle>('osm');
-  const [showHoods, setShowHoods] = useState(true);
+  const [showHoodsLocal, setShowHoodsLocal] = useState(true);
+  const showHoods = showHoodsProp ?? showHoodsLocal;
+  const setShowHoods = setShowHoodsLocal;
   const [map, setMap] = useState<L.Map | null>(null);
   const [zoom, setZoom] = useState<number>(BARZOK_CENTER.defaultZoom);
   const [center, setCenter] = useState<{ lat: number; lng: number }>({
@@ -612,7 +615,7 @@ export function LeafletMapCanvas({
           ))}
         </div>
 
-        {hoodOverlay.length > 0 && (
+        {hoodOverlay.length > 0 && showHoodsProp === undefined && (
           <button
             type="button"
             onClick={() => setShowHoods((v) => !v)}
