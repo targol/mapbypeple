@@ -3,6 +3,7 @@ import { AudioLines, Download, Film, Image as ImageIcon, Plus, Save, Search, Tra
 import type { AudioItem, Language, PhotoItem, PlaceRecord, VideoItem } from '../types';
 import { fetchHostedJson, MediaManifest, PlaceMedia } from '../utils/hostedMedia';
 import { WordPressPicker } from './WordPressPicker';
+import { BulkPhotoMatch } from './BulkPhotoMatch';
 import { SAVE_HEADERS, useHostAuth } from '../utils/hostAuth';
 
 const stripHtml = (s: string) => s.replace(/<[^>]*>/g, '').replace(/&amp;/g, '&').trim();
@@ -178,6 +179,24 @@ export function PlaceMediaManager({ lang, places }: { lang: Language; places: Pl
           </label>}
         </div>
       </div>
+
+      <BulkPhotoMatch
+        wpBase={wpBase}
+        places={places}
+        onApply={(add) => {
+          setMedia((m) => {
+            const copy = { ...m };
+            for (const [id, photos] of Object.entries(add)) {
+              const have = new Set((copy[id]?.photos ?? []).map((x) => x.url));
+              const fresh = photos.filter((x) => !have.has(x.url));
+              if (fresh.length) copy[id] = { ...(copy[id] ?? {}), photos: [...(copy[id]?.photos ?? []), ...fresh] };
+            }
+            return copy;
+          });
+          setDirty(true);
+          setStatus({ ok: true, text: 'عکس‌ها به مکان‌ها اضافه شد. حالا «ذخیره روی هاست» را بزنید.' });
+        }}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <div className="lg:col-span-4 space-y-2">

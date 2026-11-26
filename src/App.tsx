@@ -337,7 +337,6 @@ function BarzokAppContent() {
       hoodByPlace={hoodByPlace}
       selectedId={selectedPlace?.id || null}
       open={resultsOpen}
-      side={isEmbedMode && lang === 'fa' ? 'right' : 'left'}
       onOpenChange={setResultsOpen}
       onSelect={(p) => handleSelectPlace(p)}
     />
@@ -516,7 +515,7 @@ function BarzokAppContent() {
           {/* Collapsible Layer & Search Sidebar (Desktop) */}
           <div
             className={`hidden md:flex flex-col bg-[#F5F2E9] ${
-              isEmbedMode ? 'ltr:border-e rtl:border-s rtl:order-last' : 'border-e'
+              'border-e'
             } border-[#806B50]/25 transition-all duration-200 z-20 shrink-0 ${
               layerPanelOpen ? 'w-72' : 'w-12'
             }`}
