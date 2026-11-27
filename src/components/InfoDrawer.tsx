@@ -25,7 +25,7 @@ export function InfoDrawer({
   return (
     <aside
       data-testid="info-drawer"
-      className="absolute inset-0 md:inset-auto md:top-3 md:bottom-3 md:start-3 md:w-[26rem] bg-[#F5F2E9]/90 backdrop-blur-md md:rounded-xl border border-[#806B50]/30 shadow-2xl z-[1000] overflow-y-auto"
+      className="absolute inset-0 md:inset-auto md:top-3 md:bottom-3 md:end-3 md:w-[26rem] bg-[#F5F2E9]/90 backdrop-blur-md md:rounded-xl border border-[#806B50]/30 shadow-2xl z-[1000] overflow-y-auto"
     >
       <div className="sticky top-0 flex items-center justify-between gap-3 px-5 py-3 bg-[#254B36] text-[#F5F2E9]">
         <h2 className="text-sm font-bold truncate">

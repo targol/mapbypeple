@@ -190,7 +190,7 @@ export function LocationDetailPanel({
   return (
     <aside
       aria-label={lang === 'fa' ? 'جزئیات مکان' : 'Location Details'}
-      className="absolute inset-0 md:inset-auto md:top-3 md:bottom-3 md:start-3 md:w-[440px] lg:w-[480px] bg-[#F5F2E9]/90 backdrop-blur-md md:rounded-xl border border-[#806B50]/30 flex flex-col z-[1000] overflow-hidden shadow-2xl"
+      className="absolute inset-0 md:inset-auto md:top-3 md:bottom-3 md:end-3 md:w-[420px] lg:w-[440px] bg-[#F5F2E9]/90 backdrop-blur-md md:rounded-xl border border-[#806B50]/30 flex flex-col z-[1000] overflow-hidden shadow-2xl"
     >
       {/* Top Bar of Detail Panel */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-[#806B50]/20 bg-[#EBE6DF]/60 shrink-0">

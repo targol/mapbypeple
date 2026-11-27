@@ -27,7 +27,7 @@ export function ResultsPanel({
   onSelect: (p: PlaceRecord) => void;
   side?: 'left' | 'right';
 }) {
-  const pos = side === 'right' ? 'right-3' : 'end-3';
+  const pos = side === 'right' ? 'right-3' : 'start-3';
   const [expanded, setExpanded] = useState<string | null>(null);
   const fa = lang === 'fa';
   const layerOf = (id: string | null | undefined) => layers.find((l) => l.id === id);
